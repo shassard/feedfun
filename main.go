@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"sort"
 	"time"
@@ -11,12 +13,55 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-const maxAgePrintItem = time.Hour * 48
+const (
+	maxAgePrintItem = time.Hour * 48
+	opmlFilename    = "feeds.opml"
+)
 
 // Feed rss or atom feed with an optional replacement title
 type Feed struct {
 	Link     string
 	AltTitle string
+}
+
+type opml struct {
+	XMLName   xml.Name  `xml:"opml"`
+	Version   string    `xml:"version,attr"`
+	OpmlTitle string    `xml:"head>title"`
+	Outlines  []outline `xml:"body>outline"`
+}
+
+type outline struct {
+	Text     string    `xml:"text,attr"`
+	Title    string    `xml:"title,attr"`
+	Type     string    `xml:"type,attr"`
+	XMLURL   string    `xml:"xmlUrl,attr"`
+	HTMLURL  string    `xml:"htmlUrl,attr"`
+	Favicon  string    `xml:"rssfr-favicon,attr"`
+	Outlines []outline `xml:"outline"`
+}
+
+// GetFeeds return a list of feeds found in an opml file
+func GetFeeds(filename string) ([]*Feed, error) {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	var opmlDoc opml
+	xml.Unmarshal(data, &opmlDoc)
+
+	feeds := make([]*Feed, 0)
+	for _, outline := range opmlDoc.Outlines {
+		if len(outline.XMLURL) > 0 && len(outline.Text) > 0 {
+			feed := Feed{Link: outline.XMLURL, AltTitle: outline.Text}
+			log.Printf("feed: %+v", feed)
+			feeds = append(feeds, &feed)
+		} else if len(outline.Outlines) > 0 {
+			// TODO: needs some recursion!
+		}
+	}
+
+	return feeds, nil
 }
 
 // FeedItem an item from a field and it's associated feed
@@ -29,6 +74,7 @@ type FeedItem struct {
 	FirstFound time.Time
 }
 
+// sortedFeedItems utility functions to sort a list of FeedItem
 type sortedFeedItems []*FeedItem
 
 func (i sortedFeedItems) Len() int      { return len(i) }
@@ -49,7 +95,7 @@ func (i *FeedItem) GetKey() string {
 }
 
 // ProcessFeed read a feed and emit items to itemChan
-func ProcessFeed(feed Feed, itemChan chan<- *FeedItem, done chan<- bool) {
+func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 	fp := gofeed.NewParser()
 	parsedFeed, _ := fp.ParseURL(feed.Link)
 	for _, item := range parsedFeed.Items {
@@ -78,9 +124,14 @@ func ProcessFeed(feed Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 func main() {
 	json := jsoniter.ConfigFastest
 
-	feeds := []Feed{
-		{Link: "http://rss.slashdot.org/Slashdot/slashdotMain", AltTitle: "Slashdot"},
-		{Link: "http://feeds.twit.tv/twit.xml", AltTitle: "Twit"}}
+	feeds, err := GetFeeds(opmlFilename)
+	if err != nil {
+		log.Fatalf("unable to parse opml file: %v", err)
+	}
+
+	if len(feeds) == 0 {
+		log.Fatalf("no feeds found in opml: %s", opmlFilename)
+	}
 
 	path := "data.db"
 	db, err := bolt.Open(path, 0600, nil)
