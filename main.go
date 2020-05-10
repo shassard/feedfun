@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -19,11 +20,18 @@ type Feed struct {
 // FeedItem an item from a field and it's associated feed
 type FeedItem struct {
 	FeedTitle  string
+	FeedURL    string
 	Title      string
 	Link       string
 	Content    string
 	FirstFound time.Time
 }
+
+type sortedFeedItems []*FeedItem
+
+func (i sortedFeedItems) Len() int           { return len(i) }
+func (i sortedFeedItems) Swap(x, y int)      { i[x], i[y] = i[y], i[x] }
+func (i sortedFeedItems) Less(x, y int) bool { return i[x].FirstFound.Before(i[y].FirstFound) }
 
 // GetKey get the key that should be used for uniqely identifying this feed item suitable for use in a KV store
 func (i *FeedItem) GetKey() string {
@@ -36,6 +44,7 @@ func ProcessFeed(feed Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 	parsedFeed, _ := fp.ParseURL(feed.URL)
 	for _, item := range parsedFeed.Items {
 		article := FeedItem{
+			FeedURL:    feed.URL,
 			FeedTitle:  feed.AltTitle,
 			Title:      item.Title,
 			FirstFound: time.Now().UTC(),
@@ -76,11 +85,13 @@ func main() {
 		go ProcessFeed(feed, feedItemChan, doneChan)
 	}
 
+	feedItems := make([]*FeedItem, 0)
+
 GatherFeeds:
 	for {
 		select {
 		case article := <-feedItemChan:
-			fmt.Printf("%s\n", article.GetKey())
+			feedItems = append(feedItems, article)
 		case <-doneChan:
 			feedCount--
 			if feedCount == 0 {
@@ -88,5 +99,9 @@ GatherFeeds:
 			}
 		}
 	}
-	log.Printf("done")
+
+	sort.Sort(sortedFeedItems(feedItems))
+	for _, item := range feedItems {
+		fmt.Printf("%s\n", item.GetKey())
+	}
 }
