@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -10,9 +11,11 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+const maxAgePrintItem = time.Hour * 48
+
 // Feed rss or atom feed with an optional replacement title
 type Feed struct {
-	URL      string
+	Link     string
 	AltTitle string
 }
 
@@ -28,9 +31,17 @@ type FeedItem struct {
 
 type sortedFeedItems []*FeedItem
 
-func (i sortedFeedItems) Len() int           { return len(i) }
-func (i sortedFeedItems) Swap(x, y int)      { i[x], i[y] = i[y], i[x] }
-func (i sortedFeedItems) Less(x, y int) bool { return i[x].FirstFound.Before(i[y].FirstFound) }
+func (i sortedFeedItems) Len() int      { return len(i) }
+func (i sortedFeedItems) Swap(x, y int) { i[x], i[y] = i[y], i[x] }
+func (i sortedFeedItems) Less(x, y int) bool {
+	if i[x].FirstFound.Before(i[y].FirstFound) {
+		return true
+	}
+	if i[x].Title < i[y].Title {
+		return true
+	}
+	return i[x].FeedTitle < i[y].FeedTitle
+}
 
 // GetKey get the key that should be used for uniqely identifying this feed item suitable for use in a KV store
 func (i *FeedItem) GetKey() string {
@@ -40,7 +51,7 @@ func (i *FeedItem) GetKey() string {
 // ProcessFeed read a feed and emit items to itemChan
 func ProcessFeed(feed Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 	fp := gofeed.NewParser()
-	parsedFeed, _ := fp.ParseURL(feed.URL)
+	parsedFeed, _ := fp.ParseURL(feed.Link)
 	for _, item := range parsedFeed.Items {
 
 		// try to set the feed title to something nice
@@ -50,7 +61,7 @@ func ProcessFeed(feed Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 		}
 
 		article := FeedItem{
-			FeedURL:    feed.URL,
+			FeedURL:    feed.Link,
 			FeedTitle:  feedTitle,
 			Title:      item.Title,
 			FirstFound: time.Now().UTC(),
@@ -68,8 +79,8 @@ func main() {
 	json := jsoniter.ConfigFastest
 
 	feeds := []Feed{
-		{URL: "http://rss.slashdot.org/Slashdot/slashdotMain", AltTitle: "Slashdot"},
-		{URL: "http://feeds.twit.tv/twit.xml", AltTitle: "Twit"}}
+		{Link: "http://rss.slashdot.org/Slashdot/slashdotMain", AltTitle: "Slashdot"},
+		{Link: "http://feeds.twit.tv/twit.xml", AltTitle: "Twit"}}
 
 	path := "data.db"
 	db, err := bolt.Open(path, 0600, nil)
@@ -88,18 +99,11 @@ func main() {
 		go ProcessFeed(feed, feedItemChan, doneChan)
 	}
 
-	//feedItems := make([]*FeedItem, 0)
-
-	var feedItemsProcessed uint
-	var feedItemsNew uint
-
 	err = db.Batch(func(tx *bolt.Tx) error {
 	GatherFeeds:
 		for {
 			select {
 			case article := <-feedItemChan:
-				feedItemsProcessed++
-
 				b, err := tx.CreateBucketIfNotExists([]byte(article.FeedURL))
 				if err != nil {
 					log.Fatalf("could not create bucket: %v", err)
@@ -114,7 +118,6 @@ func main() {
 						continue
 					}
 					b.Put([]byte(key), data)
-					feedItemsNew++
 				}
 
 			case <-doneChan:
@@ -129,8 +132,7 @@ func main() {
 		return nil
 	})
 
-	log.Printf("items processed: %d", feedItemsProcessed)
-	log.Printf("new items found: %d", feedItemsNew)
+	itemsToPrint := make([]*FeedItem, 0)
 
 	err = db.View(func(tx *bolt.Tx) error {
 
@@ -147,7 +149,9 @@ func main() {
 					log.Printf("failed to unmarshal value: %v", err)
 					continue
 				}
-				fmt.Printf("%s %s\n", item.Title, item.Link)
+				if item.FirstFound.After(time.Now().Add(-maxAgePrintItem)) {
+					itemsToPrint = append(itemsToPrint, &item)
+				}
 			}
 		}
 
@@ -157,10 +161,8 @@ func main() {
 		log.Fatalf("failed to create view: %v", err)
 	}
 
-	/*
-		sort.Sort(sortedFeedItems(feedItems))
-		for _, item := range feedItems {
-			fmt.Printf("%s\n", item.GetKey())
-		}
-	*/
+	sort.Sort(sort.Reverse(sortedFeedItems(itemsToPrint)))
+	for _, item := range itemsToPrint {
+		fmt.Printf("%s %s\n", item.Title, item.Link)
+	}
 }
