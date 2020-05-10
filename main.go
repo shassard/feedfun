@@ -163,6 +163,6 @@ func main() {
 
 	sort.Sort(sort.Reverse(sortedFeedItems(itemsToPrint)))
 	for _, item := range itemsToPrint {
-		fmt.Printf("%s %s\n", item.Title, item.Link)
+		fmt.Printf("%s: [%s](%s)\n", item.FeedTitle, item.Title, item.Link)
 	}
 }
