@@ -78,32 +78,37 @@ func main() {
 	}
 	defer db.Close()
 
-	var feedCount int
+	var feedProcessesWaiting uint
 
-	feedItemChan := make(chan *FeedItem, 1)
+	feedItemChan := make(chan *FeedItem)
 	doneChan := make(chan bool, 1)
 
 	for _, feed := range feeds {
-		feedCount++
+		feedProcessesWaiting++
 		go ProcessFeed(feed, feedItemChan, doneChan)
 	}
 
 	//feedItems := make([]*FeedItem, 0)
+
+	var feedItemsProcessed uint
 
 	err = db.Batch(func(tx *bolt.Tx) error {
 	GatherFeeds:
 		for {
 			select {
 			case article := <-feedItemChan:
+				feedItemsProcessed++
 				b, err := tx.CreateBucketIfNotExists([]byte(article.FeedURL))
 				if err != nil {
 					log.Fatalf("could not create bucket: %v", err)
 				}
 				data, err := json.Marshal(&article)
 				b.Put([]byte(article.GetKey()), data)
+
 			case <-doneChan:
-				feedCount--
-				if feedCount == 0 {
+				feedProcessesWaiting--
+				// continue waiting for items until all feed processing go routines have reported finished
+				if feedProcessesWaiting == 0 {
 					break GatherFeeds
 				}
 			}
@@ -111,6 +116,8 @@ func main() {
 
 		return nil
 	})
+
+	log.Printf("items processed: %d", feedItemsProcessed)
 
 	/*
 		sort.Sort(sortedFeedItems(feedItems))
