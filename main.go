@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"sort"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -65,9 +64,6 @@ func main() {
 		{URL: "http://rss.slashdot.org/Slashdot/slashdotMain", AltTitle: "Slashdot"},
 		{URL: "http://feeds.twit.tv/twit.xml", AltTitle: "Twit"}}
 
-	b, _ := json.Marshal(&feeds)
-	log.Printf("feeds: %s", b)
-
 	path := "data.db"
 	db, err := bolt.Open(path, 0600, nil)
 	if err != nil {
@@ -85,23 +81,34 @@ func main() {
 		go ProcessFeed(feed, feedItemChan, doneChan)
 	}
 
-	feedItems := make([]*FeedItem, 0)
+	//feedItems := make([]*FeedItem, 0)
 
-GatherFeeds:
-	for {
-		select {
-		case article := <-feedItemChan:
-			feedItems = append(feedItems, article)
-		case <-doneChan:
-			feedCount--
-			if feedCount == 0 {
-				break GatherFeeds
+	err = db.Batch(func(tx *bolt.Tx) error {
+	GatherFeeds:
+		for {
+			select {
+			case article := <-feedItemChan:
+				b, err := tx.CreateBucketIfNotExists([]byte(article.FeedURL))
+				if err != nil {
+					log.Fatalf("could not create bucket: %v", err)
+				}
+				data, err := json.Marshal(&article)
+				b.Put([]byte(article.GetKey()), data)
+			case <-doneChan:
+				feedCount--
+				if feedCount == 0 {
+					break GatherFeeds
+				}
 			}
 		}
-	}
 
-	sort.Sort(sortedFeedItems(feedItems))
-	for _, item := range feedItems {
-		fmt.Printf("%s\n", item.GetKey())
-	}
+		return nil
+	})
+
+	/*
+		sort.Sort(sortedFeedItems(feedItems))
+		for _, item := range feedItems {
+			fmt.Printf("%s\n", item.GetKey())
+		}
+	*/
 }
