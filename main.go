@@ -91,6 +91,7 @@ func main() {
 	//feedItems := make([]*FeedItem, 0)
 
 	var feedItemsProcessed uint
+	var feedItemsNew uint
 
 	err = db.Batch(func(tx *bolt.Tx) error {
 	GatherFeeds:
@@ -98,12 +99,23 @@ func main() {
 			select {
 			case article := <-feedItemChan:
 				feedItemsProcessed++
+
 				b, err := tx.CreateBucketIfNotExists([]byte(article.FeedURL))
 				if err != nil {
 					log.Fatalf("could not create bucket: %v", err)
 				}
-				data, err := json.Marshal(&article)
-				b.Put([]byte(article.GetKey()), data)
+
+				key := []byte(article.GetKey())
+				// don't put articles that are already in the store
+				if b.Get(key) == nil {
+					data, err := json.Marshal(&article)
+					if err != nil {
+						log.Printf("error marshalling article: %v", article)
+						continue
+					}
+					b.Put([]byte(key), data)
+					feedItemsNew++
+				}
 
 			case <-doneChan:
 				feedProcessesWaiting--
@@ -118,6 +130,7 @@ func main() {
 	})
 
 	log.Printf("items processed: %d", feedItemsProcessed)
+	log.Printf("new items found: %d", feedItemsNew)
 
 	/*
 		sort.Sort(sortedFeedItems(feedItems))
