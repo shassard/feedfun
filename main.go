@@ -42,9 +42,16 @@ func ProcessFeed(feed Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 	fp := gofeed.NewParser()
 	parsedFeed, _ := fp.ParseURL(feed.URL)
 	for _, item := range parsedFeed.Items {
+
+		// try to set the feed title to something nice
+		var feedTitle = feed.AltTitle
+		if len(feedTitle) == 0 {
+			feedTitle = parsedFeed.Title
+		}
+
 		article := FeedItem{
 			FeedURL:    feed.URL,
-			FeedTitle:  feed.AltTitle,
+			FeedTitle:  feedTitle,
 			Title:      item.Title,
 			FirstFound: time.Now().UTC(),
 			Link:       item.Link,
