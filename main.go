@@ -132,6 +132,31 @@ func main() {
 	log.Printf("items processed: %d", feedItemsProcessed)
 	log.Printf("new items found: %d", feedItemsNew)
 
+	err = db.View(func(tx *bolt.Tx) error {
+
+		// all the root items are our buckets
+		// gotta catch them all!
+		c := tx.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			b := tx.Bucket(k)
+			cb := b.Cursor()
+			for bk, bv := cb.First(); bk != nil && bv != nil; bk, bv = cb.Next() {
+				var item FeedItem
+				err = json.Unmarshal(bv, &item)
+				if err != nil {
+					log.Printf("failed to unmarshal value: %v", err)
+					continue
+				}
+				fmt.Printf("%s %s\n", item.Title, item.Link)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("failed to create view: %v", err)
+	}
+
 	/*
 		sort.Sort(sortedFeedItems(feedItems))
 		for _, item := range feedItems {
