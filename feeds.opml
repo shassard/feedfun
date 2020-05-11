@@ -5,6 +5,10 @@
         <title>Stephen subscriptions in feedly Cloud</title>
     </head>
     <body>
+        <outline text="News" title="News">
+            <outline type="rss" text="Peace Arch News" title="Peace Arch News" xmlUrl="https://www.peacearchnews.com/feed/" htmlUrl="https://www.peacearchnews.com/"/>
+            <outline type="rss" text="CBC News BC" title="CBC News BC" xmlUrl="https://rss.cbc.ca/lineup/canada-britishcolumbia.xml" htmlUrl="https://www.cbc.ca/news/canada/british-columbia"/>
+        </outline>
         <outline text="Programming" title="Programming">
             <outline type="rss" text="Inside Rust Blog" title="Inside Rust Blog" xmlUrl="https://blog.rust-lang.org/inside-rust/feed.xml" htmlUrl="https://blog.rust-lang.org/inside-rust/"/>
             <outline type="rss" text="Golang Blog" title="Golang Blog" xmlUrl="https://blog.golang.org/feed.atom"/>
