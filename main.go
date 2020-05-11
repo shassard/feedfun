@@ -75,12 +75,12 @@ func GetFeeds(filename string) ([]*Feed, error) {
 
 // FeedItem an item from a field and it's associated feed
 type FeedItem struct {
-	FeedTitle  string
-	FeedURL    string
-	Title      string
-	Link       string
-	Content    string
-	FirstFound time.Time
+	FeedTitle string
+	FeedURL   string
+	Title     string
+	Link      string
+	Content   string
+	Published time.Time
 }
 
 // sortedFeedItems utility functions to sort a list of FeedItem
@@ -89,7 +89,7 @@ type sortedFeedItems []*FeedItem
 func (i sortedFeedItems) Len() int      { return len(i) }
 func (i sortedFeedItems) Swap(x, y int) { i[x], i[y] = i[y], i[x] }
 func (i sortedFeedItems) Less(x, y int) bool {
-	if i[x].FirstFound.Before(i[y].FirstFound) {
+	if i[x].Published.Before(i[y].Published) {
 		return true
 	}
 	if i[x].Title < i[y].Title {
@@ -120,13 +120,20 @@ func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 			feedTitle = parsedFeed.Title
 		}
 
+		var published time.Time
+		if item.PublishedParsed != nil {
+			published = *item.PublishedParsed
+		} else {
+			published = time.Now().UTC()
+		}
+
 		article := FeedItem{
-			FeedURL:    feed.Link,
-			FeedTitle:  feedTitle,
-			Title:      item.Title,
-			FirstFound: time.Now().UTC(),
-			Link:       item.Link,
-			Content:    item.Content,
+			FeedURL:   feed.Link,
+			FeedTitle: feedTitle,
+			Title:     item.Title,
+			Published: published,
+			Link:      item.Link,
+			Content:   item.Content,
 		}
 		itemChan <- &article
 	}
@@ -214,7 +221,7 @@ func main() {
 					log.Printf("failed to unmarshal value: %v", err)
 					continue
 				}
-				if item.FirstFound.After(time.Now().Add(-maxAgePrintItem)) {
+				if item.Published.After(time.Now().Add(-maxAgePrintItem)) {
 					itemsToPrint = append(itemsToPrint, &item)
 				}
 			}
