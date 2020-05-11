@@ -16,7 +16,13 @@ import (
 const (
 	maxAgePrintItem = time.Hour * 48
 	opmlFilename    = "feeds.opml"
-	outputFilename  = "news.html"
+	outputFilename  = "index.md"
+)
+
+const (
+	UnknownMode = iota
+	MarkdownMode
+	HTMLMode
 )
 
 // Feed rss or atom feed with an optional replacement title
@@ -145,6 +151,8 @@ func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 func main() {
 	json := jsoniter.ConfigFastest
 
+	mode := MarkdownMode
+
 	feeds, err := GetFeeds(opmlFilename)
 	if err != nil {
 		log.Fatalf("unable to parse opml file: %v", err)
@@ -238,8 +246,12 @@ func main() {
 	var data []byte
 
 	// header
-	data = []byte(
-		`<html>
+	switch mode {
+	case MarkdownMode:
+		data = []byte("# News\n\n")
+	case HTMLMode:
+		data = []byte(
+			`<html>
 <head>
 <link rel="stylesheet" type="text/css" href="style.css" />
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -247,16 +259,26 @@ func main() {
 </head>
 <body>
 `)
+	}
 
 	for _, item := range itemsToPrint {
-		data = append(data, []byte(
-			fmt.Sprintf(
-				"<p><a href=\"%s\">%s</a> <small>%s @ %s</small></p>\n",
-				item.Link, item.Title, item.FeedTitle, item.Published.Local()))...)
+		switch mode {
+		case MarkdownMode:
+			data = append(data, []byte(
+				fmt.Sprintf("[%s](%s) %s @ %s\n\n", item.Title, item.Link, item.FeedTitle, item.Published.Local()))...)
+		case HTMLMode:
+			data = append(data, []byte(
+				fmt.Sprintf(
+					"<p><a href=\"%s\">%s</a> <small>%s @ %s</small></p>\n",
+					item.Link, item.Title, item.FeedTitle, item.Published.Local()))...)
+		}
 	}
 
 	// footer
-	data = append(data, []byte("</body>\n</html>\n")...)
+	switch mode {
+	case HTMLMode:
+		data = append(data, []byte("</body>\n</html>\n")...)
+	}
 
 	if err := ioutil.WriteFile(outputFilename, data, 0600); err != nil {
 		log.Fatalf("failed to write markdown file: %v", err)
