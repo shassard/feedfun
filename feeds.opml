@@ -2,31 +2,31 @@
 
 <opml version="1.0">
     <head>
-        <title>Stephen's Feeds</title>
+        <title>Stephen subscriptions in feedly Cloud</title>
     </head>
     <body>
         <outline text="Programming" title="Programming">
             <outline type="rss" text="Inside Rust Blog" title="Inside Rust Blog" xmlUrl="https://blog.rust-lang.org/inside-rust/feed.xml" htmlUrl="https://blog.rust-lang.org/inside-rust/"/>
             <outline type="rss" text="Golang Blog" title="Golang Blog" xmlUrl="https://blog.golang.org/feed.atom"/>
+            <outline type="rss" text="gopls releases" title="gopls releases" xmlUrl="https://github.com/golang/tools/releases.atom" htmlUrl="https://github.com/golang/tools/releases"/>
         </outline>
         <outline text="Culture" title="Culture">
-            <outline type="rss" text="Aeon" title="Aeon" xmlUrl="https://aeon.co/feed.rss" htmlUrl="https://aeon.co"/>
             <outline type="rss" text="Nardwuar The Human Serviette News" title="Nardwuar The Human Serviette News" xmlUrl="http://nard.serviette.ca/feeds/posts/default" htmlUrl="http://nard.serviette.ca/"/>
             <outline type="rss" text="The Narwhal" title="The Narwhal" xmlUrl="https://thenarwhal.ca/feed/" htmlUrl="https://thenarwhal.ca"/>
             <outline type="rss" text="Open Culture" title="Open Culture" xmlUrl="http://feeds.feedburner.com/OpenCulture" htmlUrl="http://www.openculture.com"/>
         </outline>
         <outline text="Tech" title="Tech">
-            <outline type="rss" text="DragonFly BSD Digest" title="DragonFly BSD Digest" xmlUrl="https://www.dragonflydigest.com/feed" htmlUrl="https://www.dragonflydigest.com"/>
-            <outline type="rss" text="KeePassXC Password Manager" title="KeePassXC Password Manager" xmlUrl="https://keepassxc.org/blog/feed.xml" htmlUrl="https://keepassxc.org/"/>
+            <outline type="rss" text="KeePassXC Releases" title="KeePassXC Releases" xmlUrl="https://keepassxc.org/blog/feed.xml" htmlUrl="https://keepassxc.org/"/>
             <outline type="rss" text="inks" title="inks" xmlUrl="https://inks.tedunangst.com/rss" htmlUrl="https://inks.tedunangst.com/"/>
             <outline type="rss" text="Microsoft Surface Devices Blog" title="Microsoft Surface Devices Blog" xmlUrl="https://blogs.windows.com/devices/category/microsoft-surface/feed/" htmlUrl="https://blogs.windows.com/devices"/>
             <outline type="rss" text="Krita" title="Krita" xmlUrl="https://krita.org/en/feed/" htmlUrl="https://krita.org"/>
-            <outline type="rss" text="Cloudflare Blog" title="Cloudflare Blog" xmlUrl="http://blog.cloudflare.com/rss.xml" htmlUrl="https://blog.cloudflare.com/"/>
+            <outline type="rss" text="Cloudflare Blog" title="Cloudflare Blog" xmlUrl="http://blog.cloudflare.com/rss" htmlUrl="https://blog.cloudflare.com/"/>
             <outline type="rss" text="Brendan Gregg Blog" title="Brendan Gregg Blog" xmlUrl="http://www.brendangregg.com/blog/rss.xml" htmlUrl="http://www.brendangregg.com/blog"/>
+            <outline type="rss" text="DragonFly BSD Digest" title="DragonFly BSD Digest" xmlUrl="https://www.dragonflydigest.com/feed" htmlUrl="https://www.dragonflydigest.com"/>
             <outline type="rss" text="OPNsense Blog" title="OPNsense Blog" xmlUrl="https://opnsense.org/blog/feed/" htmlUrl="https://opnsense.org"/>
             <outline type="rss" text="Home Assistant Blog" title="Home Assistant Blog" xmlUrl="https://www.home-assistant.io/atom.xml" htmlUrl="https://www.home-assistant.io/"/>
             <outline type="rss" text="blender" title="blender" xmlUrl="http://www.blender.org/feed/" htmlUrl="https://www.blender.org"/>
-            <outline type="rss" text="Windows Experience Blog" title="Windows Experience Blog" xmlUrl="http://blogs.windows.com/windows_phone/b/windowsphone/rss.aspx" htmlUrl="https://blogs.windows.com/windowsexperience"/>
+            <outline type="rss" text="Windows Experience Blog" title="Windows Experience Blog" xmlUrl="https://blogs.windows.com/windowsexperience/feed/" htmlUrl="https://blogs.windows.com/windowsexperience"/>
         </outline>
     </body>
 </opml>
