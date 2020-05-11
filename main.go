@@ -236,7 +236,15 @@ func main() {
 	var data []byte
 
 	// header
-	data = []byte("<html>\n<head>\n<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />\n</head>\n<body>\n")
+	data = []byte(
+		`<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="initial-scale=1.0" />
+</head>
+<body>
+`)
 
 	for _, item := range itemsToPrint {
 		data = append(data, []byte(
