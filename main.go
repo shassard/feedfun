@@ -19,10 +19,11 @@ const (
 	outputFilename  = "index.md"
 )
 
+// output modes
 const (
-	UnknownMode = iota
-	MarkdownMode
-	HTMLMode
+	UnknownOutputMode = iota
+	MarkdownOutputMode
+	HTMLOutputMode
 )
 
 // Feed rss or atom feed with an optional replacement title
@@ -151,7 +152,7 @@ func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 func main() {
 	json := jsoniter.ConfigFastest
 
-	mode := MarkdownMode
+	mode := MarkdownOutputMode
 
 	feeds, err := GetFeeds(opmlFilename)
 	if err != nil {
@@ -247,9 +248,9 @@ func main() {
 
 	// header
 	switch mode {
-	case MarkdownMode:
+	case MarkdownOutputMode:
 		data = []byte("# News\n\n")
-	case HTMLMode:
+	case HTMLOutputMode:
 		data = []byte(
 			`<html>
 <head>
@@ -263,10 +264,10 @@ func main() {
 
 	for _, item := range itemsToPrint {
 		switch mode {
-		case MarkdownMode:
+		case MarkdownOutputMode:
 			data = append(data, []byte(
 				fmt.Sprintf("[%s](%s) %s @ %s\n\n", item.Title, item.Link, item.FeedTitle, item.Published.Local()))...)
-		case HTMLMode:
+		case HTMLOutputMode:
 			data = append(data, []byte(
 				fmt.Sprintf(
 					"<p><a href=\"%s\">%s</a> <small>%s @ %s</small></p>\n",
@@ -276,7 +277,7 @@ func main() {
 
 	// footer
 	switch mode {
-	case HTMLMode:
+	case HTMLOutputMode:
 		data = append(data, []byte("</body>\n</html>\n")...)
 	}
 
