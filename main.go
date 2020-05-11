@@ -41,6 +41,24 @@ type outline struct {
 	Outlines []outline `xml:"outline"`
 }
 
+// processOutline recursively process opml outlines returning all found feeds
+func processOutline(outs []outline) []*Feed {
+	feeds := make([]*Feed, 0)
+
+	for _, out := range outs {
+		if len(out.Outlines) > 0 {
+			feeds = append(feeds, processOutline(out.Outlines)...)
+		}
+
+		if len(out.XMLURL) > 0 && len(out.Text) > 0 {
+			feed := Feed{Link: out.XMLURL, AltTitle: out.Text}
+			feeds = append(feeds, &feed)
+		}
+	}
+
+	return feeds
+}
+
 // GetFeeds return a list of feeds found in an opml file
 func GetFeeds(filename string) ([]*Feed, error) {
 	data, err := ioutil.ReadFile(filename)
@@ -50,16 +68,7 @@ func GetFeeds(filename string) ([]*Feed, error) {
 	var opmlDoc opml
 	xml.Unmarshal(data, &opmlDoc)
 
-	feeds := make([]*Feed, 0)
-	for _, outline := range opmlDoc.Outlines {
-		if len(outline.XMLURL) > 0 && len(outline.Text) > 0 {
-			feed := Feed{Link: outline.XMLURL, AltTitle: outline.Text}
-			log.Printf("feed: %+v", feed)
-			feeds = append(feeds, &feed)
-		} else if len(outline.Outlines) > 0 {
-			// TODO: needs some recursion!
-		}
-	}
+	feeds := processOutline(opmlDoc.Outlines)
 
 	return feeds, nil
 }
@@ -97,7 +106,12 @@ func (i *FeedItem) GetKey() string {
 // ProcessFeed read a feed and emit items to itemChan
 func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 	fp := gofeed.NewParser()
-	parsedFeed, _ := fp.ParseURL(feed.Link)
+	parsedFeed, err := fp.ParseURL(feed.Link)
+	if err != nil {
+		log.Printf("error processing feed: %+v %v", feed, err)
+		done <- true
+		return
+	}
 	for _, item := range parsedFeed.Items {
 
 		// try to set the feed title to something nice
