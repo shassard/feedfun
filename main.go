@@ -206,8 +206,7 @@ func main() {
 
 	itemsToPrint := make([]*FeedItem, 0)
 
-	err = db.View(func(tx *bolt.Tx) error {
-
+	if err := db.View(func(tx *bolt.Tx) error {
 		// all the root items are our buckets
 		// gotta catch them all!
 		c := tx.Cursor()
@@ -216,8 +215,7 @@ func main() {
 			cb := b.Cursor()
 			for bk, bv := cb.First(); bk != nil && bv != nil; bk, bv = cb.Next() {
 				var item FeedItem
-				err = json.Unmarshal(bv, &item)
-				if err != nil {
+				if err := json.Unmarshal(bv, &item); err != nil {
 					log.Printf("failed to unmarshal value: %v", err)
 					continue
 				}
@@ -230,8 +228,7 @@ func main() {
 		}
 
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		log.Fatalf("failed to create view: %v", err)
 	}
 
