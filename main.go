@@ -87,17 +87,9 @@ type FeedItem struct {
 // sortedFeedItems utility functions to sort a list of FeedItem
 type sortedFeedItems []*FeedItem
 
-func (i sortedFeedItems) Len() int      { return len(i) }
-func (i sortedFeedItems) Swap(x, y int) { i[x], i[y] = i[y], i[x] }
-func (i sortedFeedItems) Less(x, y int) bool {
-	if i[x].Published.Before(i[y].Published) {
-		return true
-	}
-	if i[x].Title < i[y].Title {
-		return true
-	}
-	return i[x].FeedTitle < i[y].FeedTitle
-}
+func (i sortedFeedItems) Len() int           { return len(i) }
+func (i sortedFeedItems) Swap(x, y int)      { i[x], i[y] = i[y], i[x] }
+func (i sortedFeedItems) Less(x, y int) bool { return i[x].Published.Before(i[y].Published) }
 
 // GetKey get the key that should be used for uniqely identifying this feed item suitable for use in a KV store
 func (i *FeedItem) GetKey() string {
