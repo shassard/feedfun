@@ -216,6 +216,8 @@ func main() {
 					log.Printf("failed to unmarshal value: %v", err)
 					continue
 				}
+
+				// apply the cutoff date and collect recent items
 				if item.Published.After(time.Now().Add(-maxAgePrintItem)) {
 					itemsToPrint = append(itemsToPrint, &item)
 				}
@@ -228,11 +230,15 @@ func main() {
 		log.Fatalf("failed to create view: %v", err)
 	}
 
+	// newest items to the top
 	sort.Sort(sort.Reverse(sortedFeedItems(itemsToPrint)))
 
 	var data []byte
 	for _, item := range itemsToPrint {
-		data = append(data, []byte(fmt.Sprintf("[%s](%s)\n", item.Title, item.Link))...)
+		data = append(data, []byte(
+			fmt.Sprintf(
+				"[%s](%s) %s @ %s\n",
+				item.Title, item.Link, item.FeedTitle, item.Published.Local()))...)
 	}
 
 	if err := ioutil.WriteFile(markdownFilename, data, 0600); err != nil {
