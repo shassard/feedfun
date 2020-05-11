@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	maxAgePrintItem  = time.Hour * 48
-	opmlFilename     = "feeds.opml"
-	markdownFilename = "news.md"
+	maxAgePrintItem = time.Hour * 48
+	opmlFilename    = "feeds.opml"
+	outputFilename  = "news.html"
 )
 
 // Feed rss or atom feed with an optional replacement title
@@ -234,14 +234,21 @@ func main() {
 	sort.Sort(sort.Reverse(sortedFeedItems(itemsToPrint)))
 
 	var data []byte
+
+	// header
+	data = []byte("<html>\n<head>\n<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />\n</head>\n<body>\n")
+
 	for _, item := range itemsToPrint {
 		data = append(data, []byte(
 			fmt.Sprintf(
-				"[%s](%s) %s @ %s\n",
-				item.Title, item.Link, item.FeedTitle, item.Published.Local()))...)
+				"<p><a href=\"%s\">%s</a> <small>%s @ %s</small></p>\n",
+				item.Link, item.Title, item.FeedTitle, item.Published.Local()))...)
 	}
 
-	if err := ioutil.WriteFile(markdownFilename, data, 0600); err != nil {
+	// footer
+	data = append(data, []byte("</body>\n</html>\n")...)
+
+	if err := ioutil.WriteFile(outputFilename, data, 0600); err != nil {
 		log.Fatalf("failed to write markdown file: %v", err)
 	}
 }
