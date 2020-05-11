@@ -123,6 +123,8 @@ func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 		var published time.Time
 		if item.PublishedParsed != nil {
 			published = *item.PublishedParsed
+		} else if item.UpdatedParsed != nil {
+			published = *item.UpdatedParsed
 		} else {
 			published = time.Now().UTC()
 		}
