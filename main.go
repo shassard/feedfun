@@ -218,7 +218,7 @@ func main() {
 				}
 
 				// apply the cutoff date and collect recent items
-				if item.Published.After(time.Now().Add(-maxAgePrintItem)) {
+				if item.Published.After(time.Now().UTC().Add(-maxAgePrintItem)) {
 					itemsToPrint = append(itemsToPrint, &item)
 				}
 			}
