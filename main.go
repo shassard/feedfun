@@ -148,6 +148,19 @@ func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 	done <- true
 }
 
+const headerDateFormat = "Monday January 2, 2006"
+
+func getDayHeader(mode int, time *time.Time) []byte {
+	switch mode {
+	case MarkdownOutputMode:
+		return []byte(fmt.Sprintf("# %s\n\n", time.Local().Format(headerDateFormat)))
+	case HTMLOutputMode:
+		return []byte(fmt.Sprintf("<h1>%s</h1>\n\n", time.Local().Format(headerDateFormat)))
+	}
+
+	return []byte("")
+}
+
 // main this is a test
 func main() {
 	json := jsoniter.ConfigFastest
@@ -248,8 +261,6 @@ func main() {
 
 	// header
 	switch mode {
-	case MarkdownOutputMode:
-		data = []byte("# News\n\n")
 	case HTMLOutputMode:
 		data = []byte(
 			`<html>
@@ -262,7 +273,13 @@ func main() {
 `)
 	}
 
+	var lastItemTime *time.Time
 	for _, item := range itemsToPrint {
+		// check if we should print the day
+		if lastItemTime == nil || (item.Published.Day() != lastItemTime.Day()) {
+			data = append(data, getDayHeader(mode, &item.Published)...)
+		}
+
 		switch mode {
 		case MarkdownOutputMode:
 			data = append(data, []byte(
@@ -273,6 +290,7 @@ func main() {
 					"<p><a href=\"%s\">%s</a> <small>%s @ %s</small></p>\n",
 					item.Link, item.Title, item.FeedTitle, item.Published.Local()))...)
 		}
+		lastItemTime = &item.Published
 	}
 
 	// footer
