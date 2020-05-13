@@ -276,7 +276,7 @@ func main() {
 	var lastItemTime *time.Time
 	for _, item := range itemsToPrint {
 		// check if we should print the day
-		if lastItemTime == nil || (item.Published.Day() != lastItemTime.Day()) {
+		if lastItemTime == nil || (item.Published.Local().Day() != lastItemTime.Local().Day()) {
 			data = append(data, getDayHeader(mode, &item.Published)...)
 		}
 
