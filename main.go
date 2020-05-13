@@ -150,6 +150,7 @@ func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 
 const headerDateFormat = "Monday January 2, 2006"
 
+// getDayHeader return the current date formatted in the correct output format specified by mode.
 func getDayHeader(mode int, time *time.Time) []byte {
 	switch mode {
 	case MarkdownOutputMode:
