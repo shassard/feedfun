@@ -150,16 +150,66 @@ func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 
 const headerDateFormat = "Monday January 2, 2006"
 
-// getDayHeader return the current date formatted in the correct output format specified by mode.
-func getDayHeader(mode int, time *time.Time) []byte {
-	switch mode {
-	case MarkdownOutputMode:
-		return []byte(fmt.Sprintf("# %s\n\n", time.Local().Format(headerDateFormat)))
-	case HTMLOutputMode:
-		return []byte(fmt.Sprintf("<h1>%s</h1>\n\n", time.Local().Format(headerDateFormat)))
+func printItemsHTML(items []*FeedItem) error {
+	// header
+	data := []byte(
+		`<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="initial-scale=1.0" />
+</head>
+<body>
+`)
+
+	var lastItemTime *time.Time
+	for _, item := range items {
+		// check if we should print the day
+		if lastItemTime == nil || (item.Published.Local().Day() != lastItemTime.Local().Day()) {
+			data = append(data,
+				[]byte(fmt.Sprintf("<h1>%s</h1>\n\n", item.Published.Local().Format(headerDateFormat)))...)
+		}
+
+		data = append(data, []byte(
+			fmt.Sprintf(
+				"<p><a href=\"%s\">%s</a> <small>%s @ %s</small></p>\n",
+				item.Link, item.Title, item.FeedTitle, item.Published.Local()))...)
+
+		lastItemTime = &item.Published
 	}
 
-	return []byte("")
+	// footer
+	data = append(data, []byte("</body>\n</html>\n")...)
+
+	if err := ioutil.WriteFile(outputFilename, data, 0600); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func printItemsMarkdown(items []*FeedItem) error {
+	var data []byte
+
+	var lastItemTime *time.Time
+	for _, item := range items {
+		// check if we should print the day
+		if lastItemTime == nil || (item.Published.Local().Day() != lastItemTime.Local().Day()) {
+			data = append(data,
+				[]byte(fmt.Sprintf("# %s\n\n", item.Published.Local().Format(headerDateFormat)))...)
+		}
+
+		data = append(data, []byte(
+			fmt.Sprintf("[%s](%s) %s @ %s\n\n", item.Title, item.Link, item.FeedTitle, item.Published.Local()))...)
+
+		lastItemTime = &item.Published
+	}
+
+	if err := ioutil.WriteFile(outputFilename, data, 0600); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // main this is a test
@@ -258,49 +308,17 @@ func main() {
 	// newest items to the top
 	sort.Sort(sort.Reverse(sortedFeedItems(itemsToPrint)))
 
-	var data []byte
-
-	// header
 	switch mode {
 	case HTMLOutputMode:
-		data = []byte(
-			`<html>
-<head>
-<link rel="stylesheet" type="text/css" href="style.css" />
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<meta name="viewport" content="initial-scale=1.0" />
-</head>
-<body>
-`)
-	}
-
-	var lastItemTime *time.Time
-	for _, item := range itemsToPrint {
-		// check if we should print the day
-		if lastItemTime == nil || (item.Published.Local().Day() != lastItemTime.Local().Day()) {
-			data = append(data, getDayHeader(mode, &item.Published)...)
+		if err := printItemsHTML(itemsToPrint); err != nil {
+			log.Fatalf("failed to write items: %v", err)
 		}
-
-		switch mode {
-		case MarkdownOutputMode:
-			data = append(data, []byte(
-				fmt.Sprintf("[%s](%s) %s @ %s\n\n", item.Title, item.Link, item.FeedTitle, item.Published.Local()))...)
-		case HTMLOutputMode:
-			data = append(data, []byte(
-				fmt.Sprintf(
-					"<p><a href=\"%s\">%s</a> <small>%s @ %s</small></p>\n",
-					item.Link, item.Title, item.FeedTitle, item.Published.Local()))...)
+	case MarkdownOutputMode:
+		if err := printItemsMarkdown(itemsToPrint); err != nil {
+			log.Fatalf("failed to write items: %v", err)
 		}
-		lastItemTime = &item.Published
+	case UnknownOutputMode:
+		log.Fatal("unknown output mode")
 	}
 
-	// footer
-	switch mode {
-	case HTMLOutputMode:
-		data = append(data, []byte("</body>\n</html>\n")...)
-	}
-
-	if err := ioutil.WriteFile(outputFilename, data, 0600); err != nil {
-		log.Fatalf("failed to write markdown file: %v", err)
-	}
 }
