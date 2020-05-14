@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"sort"
 	"time"
 
@@ -14,9 +15,9 @@ import (
 )
 
 const (
-	maxAgePrintItem = time.Hour * 48
-	opmlFilename    = "feeds.opml"
-	outputFilename  = "index.md"
+	maxAgePrintItem    = time.Hour * 48
+	opmlFilename       = "feeds.opml"
+	outputFilenameBase = "index"
 )
 
 // output modes
@@ -181,7 +182,7 @@ func printItemsHTML(items []*FeedItem) error {
 	// footer
 	data = append(data, []byte("</body>\n</html>\n")...)
 
-	if err := ioutil.WriteFile(outputFilename, data, 0600); err != nil {
+	if err := ioutil.WriteFile(fmt.Sprintf("%s.html", outputFilenameBase), data, 0600); err != nil {
 		return err
 	}
 
@@ -205,7 +206,7 @@ func printItemsMarkdown(items []*FeedItem) error {
 		lastItemTime = &item.Published
 	}
 
-	if err := ioutil.WriteFile(outputFilename, data, 0600); err != nil {
+	if err := ioutil.WriteFile(fmt.Sprintf("%s.md", outputFilenameBase), data, 0600); err != nil {
 		return err
 	}
 
@@ -217,6 +218,12 @@ func main() {
 	json := jsoniter.ConfigFastest
 
 	mode := MarkdownOutputMode
+	for _, arg := range os.Args {
+		switch arg {
+		case "-html":
+			mode = HTMLOutputMode
+		}
+	}
 
 	feeds, err := GetFeeds(opmlFilename)
 	if err != nil {
