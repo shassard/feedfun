@@ -17,6 +17,7 @@ const (
 	maxAgePrintItem    = time.Hour * 48
 	opmlFilename       = "feeds.opml"
 	outputFilenameBase = "index"
+	headerDateFormat   = "Monday January 2, 2006"
 )
 
 // output modes
@@ -98,8 +99,6 @@ func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 
 	done <- true
 }
-
-const headerDateFormat = "Monday January 2, 2006"
 
 func printItemsHTML(items []*FeedItem) error {
 	// header
