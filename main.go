@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
+	jsonIter "github.com/json-iterator/go"
 	"github.com/mmcdole/gofeed"
 	bolt "go.etcd.io/bbolt"
 )
@@ -55,7 +55,7 @@ func (i sortedFeedItems) Less(x, y int) bool {
 	return i[x].Published.Before(i[y].Published)
 }
 
-// GetKey get the key that should be used for uniqely identifying this feed item suitable for use in a KV store
+// GetKey get the key that should be used for uniquely identifying this feed item suitable for use in a KV store
 func (i *FeedItem) GetKey() string {
 	return fmt.Sprintf("%s|%s", i.FeedTitle, i.Link)
 }
@@ -164,7 +164,7 @@ func printItemsMarkdown(items []*FeedItem) error {
 
 // main this is a test
 func main() {
-	json := jsoniter.ConfigFastest
+	json := jsonIter.ConfigFastest
 
 	mode := MarkdownOutputMode
 	for _, arg := range os.Args {
@@ -188,7 +188,7 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to open bolt database")
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	var feedProcessesWaiting uint
 
@@ -218,7 +218,10 @@ func main() {
 						log.Printf("error marshalling article: %v", article)
 						continue
 					}
-					b.Put([]byte(key), data)
+					if err := b.Put(key, data); err != nil {
+						log.Printf("error putting data: %v", err)
+						continue
+					}
 				}
 
 			case <-doneChan:
