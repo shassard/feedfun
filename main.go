@@ -27,13 +27,13 @@ const (
 	HTMLOutputMode
 )
 
-// Feed rss or atom feed with an optional replacement title
+// Feed rss or atom feed with an optional replacement title.
 type Feed struct {
 	Link     string
 	AltTitle string
 }
 
-// FeedItem an item from a field and it's associated feed
+// FeedItem an item from a feed and the feed it was parsed from.
 type FeedItem struct {
 	FeedTitle string
 	FeedURL   string
@@ -43,7 +43,7 @@ type FeedItem struct {
 	Published time.Time
 }
 
-// sortedFeedItems utility functions to sort a list of FeedItem
+// sortedFeedItems utility functions to sort a list of FeedItem.
 type sortedFeedItems []*FeedItem
 
 func (i sortedFeedItems) Len() int      { return len(i) }
@@ -55,12 +55,12 @@ func (i sortedFeedItems) Less(x, y int) bool {
 	return i[x].Published.Before(i[y].Published)
 }
 
-// GetKey get the key that should be used for uniquely identifying this feed item suitable for use in a KV store
+// GetKey get the key that should be used for uniquely identifying this feed item suitable for use in a KV store.
 func (i *FeedItem) GetKey() string {
 	return fmt.Sprintf("%s|%s", i.FeedTitle, i.Link)
 }
 
-// ProcessFeed read a feed and emit items to itemChan
+// ProcessFeed read a feed and emit items to itemChan.
 func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 	fp := gofeed.NewParser()
 	parsedFeed, err := fp.ParseURL(feed.Link)
