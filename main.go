@@ -200,7 +200,7 @@ func main() {
 		go ProcessFeed(feed, feedItemChan, doneChan)
 	}
 
-	err = db.Batch(func(tx *bolt.Tx) error {
+	if err := db.Batch(func(tx *bolt.Tx) error {
 	GatherFeeds:
 		for {
 			select {
@@ -234,7 +234,9 @@ func main() {
 		}
 
 		return nil
-	})
+	}); err != nil {
+		log.Fatalf("failed to create batch: %v", err)
+	}
 
 	itemsToPrint := make([]*FeedItem, 0)
 

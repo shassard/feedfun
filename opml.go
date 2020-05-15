@@ -47,7 +47,9 @@ func GetFeeds(filename string) ([]*Feed, error) {
 		return nil, err
 	}
 	var opmlDoc opml
-	xml.Unmarshal(data, &opmlDoc)
+	if err := xml.Unmarshal(data, &opmlDoc); err != nil {
+		return nil, err
+	}
 
 	feeds := processOutline(opmlDoc.Outlines)
 
