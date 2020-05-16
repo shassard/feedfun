@@ -32,7 +32,7 @@ func processOutline(outs []outline) []*Feed {
 		}
 
 		if len(out.XMLURL) > 0 && len(out.Text) > 0 {
-			feed := Feed{Link: out.XMLURL, AltTitle: out.Text}
+			feed := Feed{Link: out.XMLURL, TitleOverride: out.Text}
 			feeds = append(feeds, &feed)
 		}
 	}
