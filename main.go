@@ -1,10 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"sort"
 	"time"
 
@@ -166,12 +166,17 @@ func printItemsMarkdown(items []*FeedItem) error {
 func main() {
 	json := jsonIter.ConfigFastest
 
-	mode := MarkdownOutputMode
-	for _, arg := range os.Args {
-		switch arg {
-		case "-html":
-			mode = HTMLOutputMode
-		}
+	var mode int
+
+	var outMode string
+	flag.StringVar(&outMode, "outmode", "markdown", "output mode: [markdown|html]")
+	switch outMode {
+	case "html":
+		mode = HTMLOutputMode
+	case "markdown":
+		mode = MarkdownOutputMode
+	default:
+		mode = UnknownOutputMode
 	}
 
 	feeds, err := GetFeeds(opmlFilename)
@@ -271,10 +276,12 @@ func main() {
 
 	switch mode {
 	case HTMLOutputMode:
+		log.Printf("output mode: html\n")
 		if err := printItemsHTML(itemsToPrint); err != nil {
 			log.Fatalf("failed to write items: %v", err)
 		}
 	case MarkdownOutputMode:
+		log.Printf("output mode: markdown\n")
 		if err := printItemsMarkdown(itemsToPrint); err != nil {
 			log.Fatalf("failed to write items: %v", err)
 		}
