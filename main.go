@@ -29,8 +29,8 @@ const (
 
 // Feed rss or atom feed with an optional replacement title.
 type Feed struct {
-	Link     string
-	AltTitle string
+	Link          string
+	TitleOverride string
 }
 
 // FeedItem an item from a feed and the feed it was parsed from.
@@ -72,7 +72,7 @@ func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 	for _, item := range parsedFeed.Items {
 
 		// try to set the feed title to something nice
-		var feedTitle = feed.AltTitle
+		var feedTitle = feed.TitleOverride
 		if len(feedTitle) == 0 {
 			feedTitle = parsedFeed.Title
 		}
