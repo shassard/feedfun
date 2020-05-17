@@ -10,3 +10,5 @@ require (
 	golang.org/x/net v0.0.0-20200506145744-7e3656a0809f // indirect
 	golang.org/x/text v0.3.2 // indirect
 )
+
+replace github.com/mmcdole/gofeed => github.com/shassard/gofeed v1.0.1-0.20200514035827-2d27f3b69931
