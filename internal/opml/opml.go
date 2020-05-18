@@ -1,8 +1,10 @@
-package main
+package opml
 
 import (
 	"encoding/xml"
 	"io/ioutil"
+
+	"github.com/shassard/feedfun/internal/feed"
 )
 
 type opml struct {
@@ -23,8 +25,8 @@ type outline struct {
 }
 
 // processOutline recursively process opml outlines returning all found feeds
-func processOutline(outs []outline) []*Feed {
-	feeds := make([]*Feed, 0)
+func processOutline(outs []outline) []*feed.Feed {
+	feeds := make([]*feed.Feed, 0)
 
 	for _, out := range outs {
 		if len(out.Outlines) > 0 {
@@ -32,7 +34,7 @@ func processOutline(outs []outline) []*Feed {
 		}
 
 		if len(out.XMLURL) > 0 && len(out.Text) > 0 {
-			feed := Feed{Link: out.XMLURL, TitleOverride: out.Text}
+			feed := feed.Feed{Link: out.XMLURL, TitleOverride: out.Text}
 			feeds = append(feeds, &feed)
 		}
 	}
@@ -41,7 +43,7 @@ func processOutline(outs []outline) []*Feed {
 }
 
 // GetFeedsFromOPML return a list of feeds found in an opml file
-func GetFeedsFromOPML(filename string) ([]*Feed, error) {
+func GetFeedsFromOPML(filename string) ([]*feed.Feed, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
