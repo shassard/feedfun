@@ -10,17 +10,21 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-const (
-	opmlFilename = "feeds.opml"
-	boltDB       = "data.db"
-)
-
 // main this is a test
 func main() {
 	var mode int
 
 	var outMode string
 	flag.StringVar(&outMode, "outmode", "markdown", "output mode: [markdown|html]")
+
+	var opmlFilename string
+	flag.StringVar(&opmlFilename, "opml", "feeds.opml", "opml filename")
+
+	var boltDBFilename string
+	flag.StringVar(&boltDBFilename, "db", "data.db", "bolt database filename")
+
+	flag.Parse()
+
 	switch outMode {
 	case "html":
 		mode = output.HTMLOutputMode
@@ -30,7 +34,7 @@ func main() {
 		mode = output.UnknownOutputMode
 	}
 
-	db, err := bolt.Open(boltDB, 0600, nil)
+	db, err := bolt.Open(boltDBFilename, 0600, nil)
 	if err != nil {
 		log.Fatal("failed to open bolt database")
 	}
