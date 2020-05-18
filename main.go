@@ -62,14 +62,15 @@ func (i *FeedItem) GetKey() string {
 }
 
 // ProcessFeed read a feed and emit items to itemChan.
-func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
+func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool, chErr chan<- error) {
 	fp := gofeed.NewParser()
 	parsedFeed, err := fp.ParseURL(feed.Link)
 	if err != nil {
-		log.Printf("error processing feed: %+v %v", feed, err)
+		chErr <- fmt.Errorf("error processing feed: %+v %v", feed, err)
 		done <- true
 		return
 	}
+
 	for _, item := range parsedFeed.Items {
 
 		// try to set the feed title to something nice
@@ -182,10 +183,11 @@ func getFeeds(db *bolt.DB) error {
 
 	feedItemChan := make(chan *FeedItem)
 	doneChan := make(chan bool, 1)
+	errChan := make(chan error, 1)
 
 	for _, feed := range feeds {
 		feedProcessesWaiting++
-		go ProcessFeed(feed, feedItemChan, doneChan)
+		go ProcessFeed(feed, feedItemChan, doneChan, errChan)
 	}
 
 	if err := db.Batch(func(tx *bolt.Tx) error {
@@ -209,6 +211,9 @@ func getFeeds(db *bolt.DB) error {
 						return fmt.Errorf("error putting data: %w", err)
 					}
 				}
+
+			case err := <-errChan:
+				log.Printf("%s", err)
 
 			case <-doneChan:
 				feedProcessesWaiting--
