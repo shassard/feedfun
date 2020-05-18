@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"time"
 
 	"github.com/shassard/feedfun/internal/output"
 	"github.com/shassard/feedfun/internal/processing"
@@ -15,13 +16,16 @@ func main() {
 	var mode int
 
 	var outMode string
-	flag.StringVar(&outMode, "outmode", "markdown", "output mode: [markdown|html]")
+	flag.StringVar(&outMode, "outmode", "markdown", "set output mode to \"markdown\" or \"html\"")
 
 	var opmlFilename string
 	flag.StringVar(&opmlFilename, "opml", "feeds.opml", "opml filename")
 
 	var boltDBFilename string
 	flag.StringVar(&boltDBFilename, "db", "data.db", "bolt database filename")
+
+	var maxAgeHours uint
+	flag.UintVar(&maxAgeHours, "hours", 48, "output articles published within this many hours")
 
 	flag.Parse()
 
@@ -44,7 +48,7 @@ func main() {
 		log.Fatal("failed to get feeds: %w", err)
 	}
 
-	if err := output.OutputItems(db, mode); err != nil {
+	if err := output.OutputItems(db, mode, time.Duration(int64(maxAgeHours)*int64(time.Hour))); err != nil {
 		log.Fatal("failed to output items: w", err)
 	}
 }

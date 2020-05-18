@@ -21,7 +21,6 @@ const (
 
 const (
 	HeaderDateFormat   = "Monday January 2, 2006"
-	MaxAgePrintItem    = time.Hour * 48
 	OutputFilenameBase = "index"
 )
 
@@ -92,7 +91,7 @@ func outputItemsMarkdown(items []*f.FeedItem) error {
 }
 
 // OutputItems read items from a bolt db and output them in the mode requested.
-func OutputItems(db *bolt.DB, mode int) error {
+func OutputItems(db *bolt.DB, mode int, maxAge time.Duration) error {
 	json := jsonIter.ConfigFastest
 
 	itemsToPrint := make([]*f.FeedItem, 0)
@@ -111,7 +110,7 @@ func OutputItems(db *bolt.DB, mode int) error {
 				}
 
 				// apply the cutoff date and collect recent items
-				if item.Published.After(time.Now().UTC().Add(-MaxAgePrintItem)) {
+				if item.Published.After(time.Now().UTC().Add(-maxAge)) {
 					itemsToPrint = append(itemsToPrint, &item)
 				}
 			}
