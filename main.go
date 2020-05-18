@@ -166,16 +166,16 @@ func printItemsMarkdown(items []*FeedItem) error {
 }
 
 // getFeeds read opml subscriptions and populate bolt db with items.
-func getFeeds(db *bolt.DB) {
+func getFeeds(db *bolt.DB) error {
 	json := jsonIter.ConfigFastest
 
 	feeds, err := GetFeeds(opmlFilename)
 	if err != nil {
-		log.Fatalf("unable to parse opml file: %v", err)
+		return fmt.Errorf("unable to parse opml file: %w", err)
 	}
 
 	if len(feeds) == 0 {
-		log.Fatalf("no feeds found in opml: %s", opmlFilename)
+		return fmt.Errorf("no feeds found in opml: %s", opmlFilename)
 	}
 
 	var feedProcessesWaiting uint
@@ -195,7 +195,7 @@ func getFeeds(db *bolt.DB) {
 			case article := <-feedItemChan:
 				b, err := tx.CreateBucketIfNotExists([]byte(article.FeedURL))
 				if err != nil {
-					log.Fatalf("could not create bucket: %v", err)
+					return fmt.Errorf("could not create bucket: %w", err)
 				}
 
 				key := []byte(article.GetKey())
@@ -203,12 +203,10 @@ func getFeeds(db *bolt.DB) {
 				if b.Get(key) == nil {
 					data, err := json.Marshal(&article)
 					if err != nil {
-						log.Printf("error marshalling article: %v", article)
-						continue
+						return fmt.Errorf("error marshalling article %v: %w", article, err)
 					}
 					if err := b.Put(key, data); err != nil {
-						log.Printf("error putting data: %v", err)
-						continue
+						return fmt.Errorf("error putting data: %w", err)
 					}
 				}
 
@@ -223,12 +221,16 @@ func getFeeds(db *bolt.DB) {
 
 		return nil
 	}); err != nil {
-		log.Fatalf("failed to create batch: %v", err)
+		return fmt.Errorf("failed to create batch: %w", err)
 	}
+
+	return nil
 }
 
+var ErrUnknownMode = fmt.Errorf("unknown mode")
+
 // printItems read items from a bolt db and output them in the mode requested.
-func printItems(db *bolt.DB, mode int) {
+func printItems(db *bolt.DB, mode int) error {
 	json := jsonIter.ConfigFastest
 
 	itemsToPrint := make([]*FeedItem, 0)
@@ -243,8 +245,7 @@ func printItems(db *bolt.DB, mode int) {
 			for bk, bv := cb.First(); bk != nil && bv != nil; bk, bv = cb.Next() {
 				var item FeedItem
 				if err := json.Unmarshal(bv, &item); err != nil {
-					log.Printf("failed to unmarshal value: %v", err)
-					continue
+					return fmt.Errorf("failed to unmarshal value: %w", err)
 				}
 
 				// apply the cutoff date and collect recent items
@@ -256,7 +257,7 @@ func printItems(db *bolt.DB, mode int) {
 
 		return nil
 	}); err != nil {
-		log.Fatalf("failed to create view: %v", err)
+		return fmt.Errorf("failed to create view: %w", err)
 	}
 
 	// newest items to the top
@@ -264,18 +265,18 @@ func printItems(db *bolt.DB, mode int) {
 
 	switch mode {
 	case HTMLOutputMode:
-		log.Printf("output mode: html\n")
 		if err := printItemsHTML(itemsToPrint); err != nil {
-			log.Fatalf("failed to write items: %v", err)
+			return fmt.Errorf("failed to write items: %w", err)
 		}
 	case MarkdownOutputMode:
-		log.Printf("output mode: markdown\n")
 		if err := printItemsMarkdown(itemsToPrint); err != nil {
-			log.Fatalf("failed to write items: %v", err)
+			return fmt.Errorf("failed to write items: %w", err)
 		}
 	case UnknownOutputMode:
-		log.Fatal("unknown output mode")
+		return ErrUnknownMode
 	}
+
+	return nil
 
 }
 
@@ -301,7 +302,11 @@ func main() {
 	}
 	defer func() { _ = db.Close() }()
 
-	getFeeds(db)
+	if err := getFeeds(db); err != nil {
+		log.Fatal("failed to get feeds: %w", err)
+	}
 
-	printItems(db, mode)
+	if err := printItems(db, mode); err != nil {
+		log.Fatal("failed to output items: w", err)
+	}
 }
