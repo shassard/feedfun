@@ -1,4 +1,4 @@
-module feedfun
+module github.com/shassard/feedfun
 
 go 1.14
 
