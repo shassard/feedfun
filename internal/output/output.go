@@ -27,8 +27,8 @@ const (
 
 var ErrUnknownMode = fmt.Errorf("unknown mode")
 
-// printItemsHTML write items to disk in html format.
-func printItemsHTML(items []*f.FeedItem) error {
+// outputItemsHTML write items to disk in html format.
+func outputItemsHTML(items []*f.FeedItem) error {
 	// header
 	data := []byte(
 		`<html>
@@ -66,8 +66,8 @@ func printItemsHTML(items []*f.FeedItem) error {
 	return nil
 }
 
-// printItemsMarkdown write items to disk in markdown format.
-func printItemsMarkdown(items []*f.FeedItem) error {
+// outputItemsMarkdown write items to disk in markdown format.
+func outputItemsMarkdown(items []*f.FeedItem) error {
 	var data []byte
 
 	var lastItemTime *time.Time
@@ -91,8 +91,8 @@ func printItemsMarkdown(items []*f.FeedItem) error {
 	return nil
 }
 
-// PrintItems read items from a bolt db and output them in the mode requested.
-func PrintItems(db *bolt.DB, mode int) error {
+// OutputItems read items from a bolt db and output them in the mode requested.
+func OutputItems(db *bolt.DB, mode int) error {
 	json := jsonIter.ConfigFastest
 
 	itemsToPrint := make([]*f.FeedItem, 0)
@@ -127,11 +127,11 @@ func PrintItems(db *bolt.DB, mode int) error {
 
 	switch mode {
 	case HTMLOutputMode:
-		if err := printItemsHTML(itemsToPrint); err != nil {
+		if err := outputItemsHTML(itemsToPrint); err != nil {
 			return fmt.Errorf("failed to write items: %w", err)
 		}
 	case MarkdownOutputMode:
-		if err := printItemsMarkdown(itemsToPrint); err != nil {
+		if err := outputItemsMarkdown(itemsToPrint); err != nil {
 			return fmt.Errorf("failed to write items: %w", err)
 		}
 	case UnknownOutputMode:

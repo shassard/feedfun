@@ -40,7 +40,7 @@ func main() {
 		log.Fatal("failed to get feeds: %w", err)
 	}
 
-	if err := output.PrintItems(db, mode); err != nil {
+	if err := output.OutputItems(db, mode); err != nil {
 		log.Fatal("failed to output items: w", err)
 	}
 }
