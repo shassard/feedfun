@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"time"
 
 	"github.com/shassard/feedfun/internal/output"
 	"github.com/shassard/feedfun/internal/processing"
@@ -12,16 +11,12 @@ import (
 )
 
 const (
-	maxAgePrintItem    = time.Hour * 48
-	outputFilenameBase = "index"
-	headerDateFormat   = "Monday January 2, 2006"
-	opmlFilename       = "feeds.opml"
-	boltDB             = "data.db"
+	opmlFilename = "feeds.opml"
+	boltDB       = "data.db"
 )
 
 // main this is a test
 func main() {
-
 	var mode int
 
 	var outMode string
