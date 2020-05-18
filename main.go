@@ -100,6 +100,7 @@ func ProcessFeed(feed *Feed, itemChan chan<- *FeedItem, done chan<- bool) {
 	done <- true
 }
 
+// printItemsHTML write items to disk in html format.
 func printItemsHTML(items []*FeedItem) error {
 	// header
 	data := []byte(
@@ -138,6 +139,7 @@ func printItemsHTML(items []*FeedItem) error {
 	return nil
 }
 
+// printItemsMarkdown write items to disk in markdown format.
 func printItemsMarkdown(items []*FeedItem) error {
 	var data []byte
 
@@ -162,7 +164,7 @@ func printItemsMarkdown(items []*FeedItem) error {
 	return nil
 }
 
-// getFeeds read opml subscriptions and populate bolt db with items
+// getFeeds read opml subscriptions and populate bolt db with items.
 func getFeeds(db *bolt.DB) {
 	json := jsonIter.ConfigFastest
 
@@ -224,6 +226,7 @@ func getFeeds(db *bolt.DB) {
 	}
 }
 
+// printItems read items from a bolt db and output them in the mode requested.
 func printItems(db *bolt.DB, mode int) {
 	json := jsonIter.ConfigFastest
 
