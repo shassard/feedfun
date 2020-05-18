@@ -40,8 +40,8 @@ func processOutline(outs []outline) []*Feed {
 	return feeds
 }
 
-// GetFeeds return a list of feeds found in an opml file
-func GetFeeds(filename string) ([]*Feed, error) {
+// GetFeedsFromOPML return a list of feeds found in an opml file
+func GetFeedsFromOPML(filename string) ([]*Feed, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err

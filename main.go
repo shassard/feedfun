@@ -169,7 +169,7 @@ func printItemsMarkdown(items []*FeedItem) error {
 func getFeeds(db *bolt.DB) error {
 	json := jsonIter.ConfigFastest
 
-	feeds, err := GetFeeds(opmlFilename)
+	feeds, err := GetFeedsFromOPML(opmlFilename)
 	if err != nil {
 		return fmt.Errorf("unable to parse opml file: %w", err)
 	}
