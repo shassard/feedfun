@@ -18,6 +18,7 @@ const (
 	opmlFilename       = "feeds.opml"
 	outputFilenameBase = "index"
 	headerDateFormat   = "Monday January 2, 2006"
+	boltDB             = "data.db"
 )
 
 // output modes
@@ -294,8 +295,7 @@ func main() {
 		mode = UnknownOutputMode
 	}
 
-	path := "data.db"
-	db, err := bolt.Open(path, 0600, nil)
+	db, err := bolt.Open(boltDB, 0600, nil)
 	if err != nil {
 		log.Fatal("failed to open bolt database")
 	}
