@@ -13,8 +13,6 @@ import (
 
 // main this is a test
 func main() {
-	var mode int
-
 	var outMode string
 	flag.StringVar(&outMode, "outmode", "markdown", "set output mode to \"markdown\" or \"html\"")
 
@@ -28,6 +26,8 @@ func main() {
 	flag.UintVar(&maxAgeHours, "hours", 48, "output articles published within this many hours")
 
 	flag.Parse()
+
+	var mode int
 
 	switch outMode {
 	case "html":
