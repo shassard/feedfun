@@ -13,8 +13,8 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-// ProcessFeed read a feed and emit items to itemChan.
-func ProcessFeed(feed *f.Feed, itemChan chan<- *f.FeedItem, done chan<- bool, chErr chan<- error) {
+// processFeed read a feed and emit items to itemChan.
+func processFeed(feed *f.Feed, itemChan chan<- *f.FeedItem, done chan<- bool, chErr chan<- error) {
 	fp := gofeed.NewParser()
 	parsedFeed, err := fp.ParseURL(feed.Link)
 	if err != nil {
@@ -75,7 +75,7 @@ func GetFeeds(db *bolt.DB, opmlFilename string) error {
 
 	for _, feed := range feeds {
 		feedProcessesWaiting++
-		go ProcessFeed(feed, feedItemChan, doneChan, errChan)
+		go processFeed(feed, feedItemChan, doneChan, errChan)
 	}
 
 	if err := db.Batch(func(tx *bolt.Tx) error {
