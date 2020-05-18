@@ -162,22 +162,9 @@ func printItemsMarkdown(items []*FeedItem) error {
 	return nil
 }
 
-// main this is a test
-func main() {
+// getFeeds read opml subscriptions and populate bolt db with items
+func getFeeds(db *bolt.DB) {
 	json := jsonIter.ConfigFastest
-
-	var mode int
-
-	var outMode string
-	flag.StringVar(&outMode, "outmode", "markdown", "output mode: [markdown|html]")
-	switch outMode {
-	case "html":
-		mode = HTMLOutputMode
-	case "markdown":
-		mode = MarkdownOutputMode
-	default:
-		mode = UnknownOutputMode
-	}
 
 	feeds, err := GetFeeds(opmlFilename)
 	if err != nil {
@@ -187,13 +174,6 @@ func main() {
 	if len(feeds) == 0 {
 		log.Fatalf("no feeds found in opml: %s", opmlFilename)
 	}
-
-	path := "data.db"
-	db, err := bolt.Open(path, 0600, nil)
-	if err != nil {
-		log.Fatal("failed to open bolt database")
-	}
-	defer func() { _ = db.Close() }()
 
 	var feedProcessesWaiting uint
 
@@ -242,6 +222,10 @@ func main() {
 	}); err != nil {
 		log.Fatalf("failed to create batch: %v", err)
 	}
+}
+
+func printItems(db *bolt.DB, mode int) {
+	json := jsonIter.ConfigFastest
 
 	itemsToPrint := make([]*FeedItem, 0)
 
@@ -289,4 +273,32 @@ func main() {
 		log.Fatal("unknown output mode")
 	}
 
+}
+
+// main this is a test
+func main() {
+
+	var mode int
+
+	var outMode string
+	flag.StringVar(&outMode, "outmode", "markdown", "output mode: [markdown|html]")
+	switch outMode {
+	case "html":
+		mode = HTMLOutputMode
+	case "markdown":
+		mode = MarkdownOutputMode
+	default:
+		mode = UnknownOutputMode
+	}
+
+	path := "data.db"
+	db, err := bolt.Open(path, 0600, nil)
+	if err != nil {
+		log.Fatal("failed to open bolt database")
+	}
+	defer func() { _ = db.Close() }()
+
+	getFeeds(db)
+
+	printItems(db, mode)
 }
