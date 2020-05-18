@@ -37,7 +37,7 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.FeedItem, done chan<- bool, ch
 		} else if item.UpdatedParsed != nil {
 			published = *item.UpdatedParsed
 		} else {
-			published = time.Now().UTC()
+			published = time.Now()
 		}
 
 		article := f.FeedItem{

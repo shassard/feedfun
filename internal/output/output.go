@@ -38,19 +38,20 @@ func outputItemsHTML(items []*f.FeedItem) error {
 </head>
 <body>
 `)
+	loc := time.Now().Location()
 
 	var lastItemTime *time.Time
 	for _, item := range items {
 		// check if we should print the day
 		if lastItemTime == nil || (item.Published.Local().Day() != lastItemTime.Local().Day()) {
 			data = append(data,
-				[]byte(fmt.Sprintf("<h1>%s</h1>\n\n", item.Published.Local().Format(HeaderDateFormat)))...)
+				[]byte(fmt.Sprintf("<h1>%s</h1>\n\n", item.Published.In(loc).Format(HeaderDateFormat)))...)
 		}
 
 		data = append(data, []byte(
 			fmt.Sprintf(
 				"<p><a href=\"%s\">%s</a> <small>%s @ %s</small></p>\n",
-				item.Link, item.Title, item.FeedTitle, item.Published.Local()))...)
+				item.Link, item.Title, item.FeedTitle, item.Published.In(loc)))...)
 
 		lastItemTime = &item.Published
 	}
@@ -69,16 +70,18 @@ func outputItemsHTML(items []*f.FeedItem) error {
 func outputItemsMarkdown(items []*f.FeedItem) error {
 	var data []byte
 
+	loc := time.Now().Location()
+
 	var lastItemTime *time.Time
 	for _, item := range items {
 		// check if we should print the day
-		if lastItemTime == nil || (item.Published.Local().Day() != lastItemTime.Local().Day()) {
+		if lastItemTime == nil || (item.Published.In(loc).Day() != lastItemTime.In(loc).Day()) {
 			data = append(data,
-				[]byte(fmt.Sprintf("# %s\n\n", item.Published.Local().Format(HeaderDateFormat)))...)
+				[]byte(fmt.Sprintf("# %s\n\n", item.Published.In(loc).Format(HeaderDateFormat)))...)
 		}
 
 		data = append(data, []byte(
-			fmt.Sprintf("[%s](%s) %s @ %s\n\n", item.Title, item.Link, item.FeedTitle, item.Published.Local()))...)
+			fmt.Sprintf("[%s](%s) %s @ %s\n\n", item.Title, item.Link, item.FeedTitle, item.Published.In(loc)))...)
 
 		lastItemTime = &item.Published
 	}
@@ -110,7 +113,7 @@ func OutputItems(db *bolt.DB, mode int, maxAge time.Duration) error {
 				}
 
 				// apply the cutoff date and collect recent items
-				if item.Published.After(time.Now().UTC().Add(-maxAge)) {
+				if item.Published.After(time.Now().Add(-maxAge)) {
 					itemsToPrint = append(itemsToPrint, &item)
 				}
 			}
