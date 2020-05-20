@@ -40,15 +40,15 @@ func main() {
 
 	db, err := bolt.Open(boltDBFilename, 0600, nil)
 	if err != nil {
-		log.Fatal("failed to open bolt database")
+		log.Fatalf("failed to open bolt database: %v", err)
 	}
 	defer func() { _ = db.Close() }()
 
 	if err := processing.GetFeeds(db, opmlFilename); err != nil {
-		log.Fatal("failed to get feeds: %w", err)
+		log.Fatalf("failed to get feeds: %v", err)
 	}
 
-	if err := output.OutputItems(db, mode, time.Duration(int64(maxAgeHours)*int64(time.Hour))); err != nil {
-		log.Fatal("failed to output items: w", err)
+	if err := output.WriteItems(db, mode, time.Duration(int64(maxAgeHours)*int64(time.Hour))); err != nil {
+		log.Fatalf("failed to output items: %v", err)
 	}
 }

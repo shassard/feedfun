@@ -11,8 +11,8 @@ type Feed struct {
 	TitleOverride string
 }
 
-// FeedItem an item from a feed and the feed it was parsed from.
-type FeedItem struct {
+// Item an item from a feed and the feed it was parsed from.
+type Item struct {
 	FeedTitle string
 	FeedURL   string
 	Title     string
@@ -21,8 +21,8 @@ type FeedItem struct {
 	Published time.Time
 }
 
-// sortedFeedItems utility functions to sort a list of FeedItem.
-type SortedFeedItems []*FeedItem
+// sortedFeedItems utility functions to sort a list of Item.
+type SortedFeedItems []*Item
 
 func (i SortedFeedItems) Len() int      { return len(i) }
 func (i SortedFeedItems) Swap(x, y int) { i[x], i[y] = i[y], i[x] }
@@ -34,6 +34,6 @@ func (i SortedFeedItems) Less(x, y int) bool {
 }
 
 // GetKey get the key that should be used for uniquely identifying this feed item suitable for use in a KV store.
-func (i *FeedItem) GetKey() string {
+func (i *Item) GetKey() string {
 	return fmt.Sprintf("%s|%s", i.FeedTitle, i.Link)
 }

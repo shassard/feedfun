@@ -7,25 +7,25 @@ import (
 	"github.com/shassard/feedfun/internal/feed"
 )
 
-type opml struct {
+type OPML struct {
 	XMLName   xml.Name  `xml:"opml"`
 	Version   string    `xml:"version,attr"`
 	OpmlTitle string    `xml:"head>title"`
-	Outlines  []outline `xml:"body>outline"`
+	Outlines  []Outline `xml:"body>outline"`
 }
 
-type outline struct {
+type Outline struct {
 	Text     string    `xml:"text,attr"`
 	Title    string    `xml:"title,attr"`
 	Type     string    `xml:"type,attr"`
 	XMLURL   string    `xml:"xmlUrl,attr"`
 	HTMLURL  string    `xml:"htmlUrl,attr"`
 	Favicon  string    `xml:"rssfr-favicon,attr"`
-	Outlines []outline `xml:"outline"`
+	Outlines []Outline `xml:"outline"`
 }
 
-// processOutline recursively process opml outlines returning all found feeds
-func processOutline(outs []outline) []*feed.Feed {
+// processOutline recursively process OPML outlines returning all found feeds
+func processOutline(outs []Outline) []*feed.Feed {
 	feeds := make([]*feed.Feed, 0)
 
 	for _, out := range outs {
@@ -34,21 +34,21 @@ func processOutline(outs []outline) []*feed.Feed {
 		}
 
 		if len(out.XMLURL) > 0 && len(out.Text) > 0 {
-			feed := feed.Feed{Link: out.XMLURL, TitleOverride: out.Text}
-			feeds = append(feeds, &feed)
+			f := feed.Feed{Link: out.XMLURL, TitleOverride: out.Text}
+			feeds = append(feeds, &f)
 		}
 	}
 
 	return feeds
 }
 
-// GetFeedsFromOPML return a list of feeds found in an opml file
+// GetFeedsFromOPML return a list of feeds found in an OPML file
 func GetFeedsFromOPML(filename string) ([]*feed.Feed, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	var opmlDoc opml
+	var opmlDoc OPML
 	if err := xml.Unmarshal(data, &opmlDoc); err != nil {
 		return nil, err
 	}

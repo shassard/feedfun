@@ -20,14 +20,14 @@ const (
 )
 
 const (
-	HeaderDateFormat   = "Monday January 2, 2006"
-	OutputFilenameBase = "index"
+	HeaderDateFormat = "Monday January 2, 2006"
+	FilenameBase     = "index"
 )
 
 var ErrUnknownMode = fmt.Errorf("unknown mode")
 
 // outputItemsHTML write items to disk in html format.
-func outputItemsHTML(items []*f.FeedItem) error {
+func outputItemsHTML(items []*f.Item) error {
 	// header
 	data := []byte(
 		`<html>
@@ -59,7 +59,7 @@ func outputItemsHTML(items []*f.FeedItem) error {
 	// footer
 	data = append(data, []byte("</body>\n</html>\n")...)
 
-	if err := ioutil.WriteFile(fmt.Sprintf("%s.html", OutputFilenameBase), data, 0600); err != nil {
+	if err := ioutil.WriteFile(fmt.Sprintf("%s.html", FilenameBase), data, 0600); err != nil {
 		return err
 	}
 
@@ -67,7 +67,7 @@ func outputItemsHTML(items []*f.FeedItem) error {
 }
 
 // outputItemsMarkdown write items to disk in markdown format.
-func outputItemsMarkdown(items []*f.FeedItem) error {
+func outputItemsMarkdown(items []*f.Item) error {
 	var data []byte
 
 	loc := time.Now().Location()
@@ -86,18 +86,18 @@ func outputItemsMarkdown(items []*f.FeedItem) error {
 		lastItemTime = &item.Published
 	}
 
-	if err := ioutil.WriteFile(fmt.Sprintf("%s.md", OutputFilenameBase), data, 0600); err != nil {
+	if err := ioutil.WriteFile(fmt.Sprintf("%s.md", FilenameBase), data, 0600); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// OutputItems read items from a bolt db and output them in the mode requested.
-func OutputItems(db *bolt.DB, mode int, maxAge time.Duration) error {
+// WriteItems read items from a bolt db and output them in the mode requested.
+func WriteItems(db *bolt.DB, mode int, maxAge time.Duration) error {
 	json := jsonIter.ConfigFastest
 
-	itemsToPrint := make([]*f.FeedItem, 0)
+	itemsToPrint := make([]*f.Item, 0)
 
 	if err := db.View(func(tx *bolt.Tx) error {
 		// all the root items are our buckets
@@ -107,7 +107,7 @@ func OutputItems(db *bolt.DB, mode int, maxAge time.Duration) error {
 			b := tx.Bucket(k)
 			cb := b.Cursor()
 			for bk, bv := cb.First(); bk != nil && bv != nil; bk, bv = cb.Next() {
-				var item f.FeedItem
+				var item f.Item
 				if err := json.Unmarshal(bv, &item); err != nil {
 					return fmt.Errorf("failed to unmarshal value: %w", err)
 				}

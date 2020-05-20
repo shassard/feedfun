@@ -14,7 +14,7 @@ import (
 )
 
 // processFeed read a feed and emit items to itemChan.
-func processFeed(feed *f.Feed, itemChan chan<- *f.FeedItem, done chan<- bool, chErr chan<- error) {
+func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr chan<- error) {
 	fp := gofeed.NewParser()
 	parsedFeed, err := fp.ParseURL(feed.Link)
 	if err != nil {
@@ -40,7 +40,7 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.FeedItem, done chan<- bool, ch
 			published = time.Now()
 		}
 
-		article := f.FeedItem{
+		article := f.Item{
 			FeedURL:   feed.Link,
 			FeedTitle: feedTitle,
 			Title:     item.Title,
@@ -69,7 +69,7 @@ func GetFeeds(db *bolt.DB, opmlFilename string) error {
 
 	var feedProcessesWaiting uint
 
-	feedItemChan := make(chan *f.FeedItem)
+	feedItemChan := make(chan *f.Item)
 	doneChan := make(chan bool, 1)
 	errChan := make(chan error, 1)
 
