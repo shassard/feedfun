@@ -5,12 +5,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/mmcdole/gofeed"
 	f "github.com/shassard/feedfun/internal/feed"
 	"github.com/shassard/feedfun/internal/opml"
 
 	"github.com/cockroachdb/pebble"
 	jsonIter "github.com/json-iterator/go"
+	"github.com/mmcdole/gofeed"
 )
 
 // processFeed read a feed and emit items to itemChan.

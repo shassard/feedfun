@@ -2,13 +2,13 @@ package output
 
 import (
 	"fmt"
-	"github.com/cockroachdb/pebble"
 	"io/ioutil"
 	"sort"
 	"time"
 
 	f "github.com/shassard/feedfun/internal/feed"
 
+	"github.com/cockroachdb/pebble"
 	jsonIter "github.com/json-iterator/go"
 )
 
