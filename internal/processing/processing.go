@@ -54,7 +54,7 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr 
 	done <- true
 }
 
-// GetFeeds read OPML subscriptions and populate bolt db with items.
+// GetFeeds read OPML subscriptions and populate db with items.
 func GetFeeds(db *pebble.DB, opmlFilename string) error {
 	json := jsonIter.ConfigFastest
 
