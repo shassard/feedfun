@@ -12,16 +12,12 @@ import (
 	jsonIter "github.com/json-iterator/go"
 )
 
-// output modes
 const (
+	HeaderDateFormat  = "Monday January 2, 2006"
+	FilenameBase      = "index"
 	UnknownOutputMode = iota
 	MarkdownOutputMode
 	HTMLOutputMode
-)
-
-const (
-	HeaderDateFormat = "Monday January 2, 2006"
-	FilenameBase     = "index"
 )
 
 var ErrUnknownMode = fmt.Errorf("unknown mode")
@@ -137,5 +133,4 @@ func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 	}
 
 	return nil
-
 }
