@@ -1,3 +1,4 @@
+// processing will read an opml file, parsing found feeds into items and adding new items to a KV store.
 package processing
 
 import (
@@ -24,7 +25,6 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr 
 	}
 
 	for _, item := range parsedFeed.Items {
-
 		// try to set the feed title to something nice
 		var feedTitle = feed.TitleOverride
 		if len(feedTitle) == 0 {
@@ -88,16 +88,20 @@ GatherFeeds:
 			if _, closer, err := b.Get(key); err == pebble.ErrNotFound {
 				data, err := json.Marshal(&article)
 				if err != nil {
-					return fmt.Errorf("error marshalling article %v: %w", article, err)
+					errChan <- fmt.Errorf("error marshalling article %v: %w", article, err)
+					continue
 				}
 				if err := b.Set(key, data, nil); err != nil {
-					return fmt.Errorf("error putting data: %w", err)
+					errChan <- fmt.Errorf("error putting data: %w", err)
+					continue
 				}
 			} else if err != nil {
-				log.Printf("batch get error: %v", err)
+				errChan <- fmt.Errorf("batch get error: %w", err)
+				continue
 			} else {
 				if err := closer.Close(); err != nil {
-					log.Printf("closer error: %v", err)
+					errChan <- fmt.Errorf("closer error: %w", err)
+					continue
 				}
 			}
 
