@@ -33,6 +33,11 @@ func (i SortedFeedItems) Less(x, y int) bool {
 	return i[x].Published.Before(i[y].Published)
 }
 
+// GetPrefix get the prefix for the key for storage to the KV store.
+func (i *Item) GetPrefix() string {
+	return fmt.Sprintf("%s.", i.FeedURL)
+}
+
 // GetKey get the key that should be used for uniquely identifying this feed item suitable for use in a KV store.
 func (i *Item) GetKey() string {
 	return fmt.Sprintf("%s|%s", i.FeedTitle, i.Link)

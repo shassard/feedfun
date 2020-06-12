@@ -8,7 +8,7 @@ import (
 	"github.com/shassard/feedfun/internal/output"
 	"github.com/shassard/feedfun/internal/processing"
 
-	bolt "go.etcd.io/bbolt"
+	"github.com/cockroachdb/pebble"
 )
 
 // main this is a test
@@ -19,8 +19,8 @@ func main() {
 	var opmlFilename string
 	flag.StringVar(&opmlFilename, "opml", "feeds.opml", "opml filename")
 
-	var boltDBFilename string
-	flag.StringVar(&boltDBFilename, "db", "data.db", "bolt database filename")
+	var dbFilename string
+	flag.StringVar(&dbFilename, "db", "data.db", "database filename")
 
 	var maxAgeHours uint
 	flag.UintVar(&maxAgeHours, "hours", 48, "output articles published within this many hours")
@@ -38,9 +38,9 @@ func main() {
 		mode = output.UnknownOutputMode
 	}
 
-	db, err := bolt.Open(boltDBFilename, 0600, nil)
+	db, err := pebble.Open(dbFilename, nil)
 	if err != nil {
-		log.Fatalf("failed to open bolt database: %v", err)
+		log.Fatalf("failed to open database: %v", err)
 	}
 	defer func() { _ = db.Close() }()
 

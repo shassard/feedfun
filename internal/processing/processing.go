@@ -9,8 +9,8 @@ import (
 	f "github.com/shassard/feedfun/internal/feed"
 	"github.com/shassard/feedfun/internal/opml"
 
+	"github.com/cockroachdb/pebble"
 	jsonIter "github.com/json-iterator/go"
-	bolt "go.etcd.io/bbolt"
 )
 
 // processFeed read a feed and emit items to itemChan.
@@ -54,8 +54,8 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr 
 	done <- true
 }
 
-// GetFeeds read opml subscriptions and populate bolt db with items.
-func GetFeeds(db *bolt.DB, opmlFilename string) error {
+// GetFeeds read OPML subscriptions and populate bolt db with items.
+func GetFeeds(db *pebble.DB, opmlFilename string) error {
 	json := jsonIter.ConfigFastest
 
 	feeds, err := opml.GetFeedsFromOPML(opmlFilename)
@@ -78,43 +78,43 @@ func GetFeeds(db *bolt.DB, opmlFilename string) error {
 		go processFeed(feed, feedItemChan, doneChan, errChan)
 	}
 
-	if err := db.Batch(func(tx *bolt.Tx) error {
-	GatherFeeds:
-		for {
-			select {
-			case article := <-feedItemChan:
-				b, err := tx.CreateBucketIfNotExists([]byte(article.FeedURL))
+	b := db.NewIndexedBatch()
+GatherFeeds:
+	for {
+		select {
+		case article := <-feedItemChan:
+			key := []byte(article.GetPrefix() + article.GetKey())
+			// don't put articles that are already in the store
+			if _, closer, err := b.Get(key); err == pebble.ErrNotFound {
+				data, err := json.Marshal(&article)
 				if err != nil {
-					return fmt.Errorf("could not create bucket: %w", err)
+					return fmt.Errorf("error marshalling article %v: %w", article, err)
 				}
-
-				key := []byte(article.GetKey())
-				// don't put articles that are already in the store
-				if b.Get(key) == nil {
-					data, err := json.Marshal(&article)
-					if err != nil {
-						return fmt.Errorf("error marshalling article %v: %w", article, err)
-					}
-					if err := b.Put(key, data); err != nil {
-						return fmt.Errorf("error putting data: %w", err)
-					}
+				if err := b.Set(key, data, nil); err != nil {
+					return fmt.Errorf("error putting data: %w", err)
 				}
-
-			case err := <-errChan:
-				log.Printf("%s", err)
-
-			case <-doneChan:
-				feedProcessesWaiting--
-				// continue waiting for items until all feed processing go routines have reported finished
-				if feedProcessesWaiting == 0 {
-					break GatherFeeds
+			} else if err != nil {
+				log.Printf("batch get error: %v", err)
+			} else {
+				if err := closer.Close(); err != nil {
+					log.Printf("closer error: %v", err)
 				}
 			}
-		}
 
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to create batch: %w", err)
+		case err := <-errChan:
+			log.Printf("%s", err)
+
+		case <-doneChan:
+			feedProcessesWaiting--
+			// continue waiting for items until all feed processing go routines have reported finished
+			if feedProcessesWaiting == 0 {
+				break GatherFeeds
+			}
+		}
+	}
+
+	if err := b.Commit(nil); err != nil {
+		log.Printf("commit error: %v", err)
 	}
 
 	return nil

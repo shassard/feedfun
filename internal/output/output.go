@@ -2,6 +2,7 @@ package output
 
 import (
 	"fmt"
+	"github.com/cockroachdb/pebble"
 	"io/ioutil"
 	"sort"
 	"time"
@@ -9,7 +10,6 @@ import (
 	f "github.com/shassard/feedfun/internal/feed"
 
 	jsonIter "github.com/json-iterator/go"
-	bolt "go.etcd.io/bbolt"
 )
 
 // output modes
@@ -94,34 +94,30 @@ func outputItemsMarkdown(items []*f.Item) error {
 }
 
 // WriteItems read items from a bolt db and output them in the mode requested.
-func WriteItems(db *bolt.DB, mode int, maxAge time.Duration) error {
+func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 	json := jsonIter.ConfigFastest
 
 	itemsToPrint := make([]*f.Item, 0)
 
-	if err := db.View(func(tx *bolt.Tx) error {
-		// all the root items are our buckets
-		// gotta catch them all!
-		c := tx.Cursor()
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			b := tx.Bucket(k)
-			cb := b.Cursor()
-			for bk, bv := cb.First(); bk != nil && bv != nil; bk, bv = cb.Next() {
-				var item f.Item
-				if err := json.Unmarshal(bv, &item); err != nil {
-					return fmt.Errorf("failed to unmarshal value: %w", err)
-				}
+	b := db.NewIndexedBatch()
 
-				// apply the cutoff date and collect recent items
-				if item.Published.After(time.Now().Add(-maxAge)) {
-					itemsToPrint = append(itemsToPrint, &item)
-				}
+	// all the root items are our buckets
+	// gotta catch them all!
+	i := b.NewIter(nil)
+
+	for k := i.First(); k; k = i.Next() {
+		if v := i.Value(); v != nil {
+
+			var item f.Item
+			if err := json.Unmarshal(v, &item); err != nil {
+				return fmt.Errorf("failed to unmarshal value: %w", err)
+			}
+
+			// apply the cutoff date and collect recent items
+			if item.Published.After(time.Now().Add(-maxAge)) {
+				itemsToPrint = append(itemsToPrint, &item)
 			}
 		}
-
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to create view: %w", err)
 	}
 
 	// newest items to the top
