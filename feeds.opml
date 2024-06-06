@@ -1,35 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<opml version="1.0">
-    <head>
-        <title>Stephen's subscriptions</title>
-    </head>
-    <body>
-        <outline text="News" title="News">
-            <outline type="rss" text="CBC News BC" title="CBC News BC" xmlUrl="https://rss.cbc.ca/lineup/canada-britishcolumbia.xml" htmlUrl="https://www.cbc.ca/news/canada/british-columbia"/>
-        </outline>
-        <outline text="Programming" title="Programming">
-            <outline type="rss" text="Inside Rust Blog" title="Inside Rust Blog" xmlUrl="https://blog.rust-lang.org/inside-rust/feed.xml" htmlUrl="https://blog.rust-lang.org/inside-rust/"/>
-            <outline type="rss" text="Golang Blog" title="Golang Blog" xmlUrl="https://blog.golang.org/feed.atom"/>
-            <outline type="rss" text="gopls releases" title="gopls releases" xmlUrl="https://github.com/golang/tools/releases.atom" htmlUrl="https://github.com/golang/tools/releases"/>
-        </outline>
-        <outline text="Culture" title="Culture">
-            <outline type="rss" text="Nardwuar The Human Serviette News" title="Nardwuar The Human Serviette News" xmlUrl="http://nard.serviette.ca/feeds/posts/default" htmlUrl="http://nard.serviette.ca/"/>
-            <outline type="rss" text="The Narwhal" title="The Narwhal" xmlUrl="https://thenarwhal.ca/feed/" htmlUrl="https://thenarwhal.ca"/>
-            <outline type="rss" text="Open Culture" title="Open Culture" xmlUrl="http://feeds.feedburner.com/OpenCulture" htmlUrl="http://www.openculture.com"/>
-        </outline>
-        <outline text="Tech" title="Tech">
-            <outline type="rss" text="KeePassXC Releases" title="KeePassXC Releases" xmlUrl="https://keepassxc.org/blog/feed.xml" htmlUrl="https://keepassxc.org/"/>
-            <outline type="rss" text="inks" title="inks" xmlUrl="https://inks.tedunangst.com/rss" htmlUrl="https://inks.tedunangst.com/"/>
-            <outline type="rss" text="Microsoft Surface Devices Blog" title="Microsoft Surface Devices Blog" xmlUrl="https://blogs.windows.com/devices/category/microsoft-surface/feed/" htmlUrl="https://blogs.windows.com/devices"/>
-            <outline type="rss" text="Krita" title="Krita" xmlUrl="https://krita.org/en/feed/" htmlUrl="https://krita.org"/>
-            <outline type="rss" text="Cloudflare Blog" title="Cloudflare Blog" xmlUrl="http://blog.cloudflare.com/rss" htmlUrl="https://blog.cloudflare.com/"/>
-            <outline type="rss" text="Brendan Gregg Blog" title="Brendan Gregg Blog" xmlUrl="http://www.brendangregg.com/blog/rss.xml" htmlUrl="http://www.brendangregg.com/blog"/>
-            <outline type="rss" text="DragonFly BSD Digest" title="DragonFly BSD Digest" xmlUrl="https://www.dragonflydigest.com/feed" htmlUrl="https://www.dragonflydigest.com"/>
-            <outline type="rss" text="OPNsense Blog" title="OPNsense Blog" xmlUrl="https://opnsense.org/blog/feed/" htmlUrl="https://opnsense.org"/>
-            <outline type="rss" text="Home Assistant Blog" title="Home Assistant Blog" xmlUrl="https://www.home-assistant.io/atom.xml" htmlUrl="https://www.home-assistant.io/"/>
-            <outline type="rss" text="blender" title="blender" xmlUrl="http://www.blender.org/feed/" htmlUrl="https://www.blender.org"/>
-            <outline type="rss" text="Windows Experience Blog" title="Windows Experience Blog" xmlUrl="https://blogs.windows.com/windowsexperience/feed/" htmlUrl="https://blogs.windows.com/windowsexperience"/>
-        </outline>
-    </body>
+<opml xmlns:frss="https://freshrss.org/opml" version="2.0">
+  <head>
+    <title>FreshRSS</title>
+    <dateCreated>Wed, 05 Jun 2024 21:36:29 -0700</dateCreated>
+  </head>
+  <body>
+    <outline text="Curling">
+      <outline text="Asham Curling" type="rss" xmlUrl="https://asham.com/blogs/news.atom" htmlUrl="https://asham.com/blogs/news"/>
+      <outline text="Curl BC" type="rss" xmlUrl="http://feeds.feedburner.com/curlbc" htmlUrl="https://www.curlbc.ca/" description="Our House is Your House"/>
+      <outline text="Goldline Curling" type="rss" xmlUrl="https://blog.goldlinecurling.com/feed/" htmlUrl="https://blog.goldlinecurling.com/" description="The Voice of Curling, the Choice of Champions!"/>
+      <outline text="World Curling" type="rss" xmlUrl="https://worldcurling.org/news/feed/" htmlUrl="https://worldcurling.org/news/" description="The international sport federation governing the Olympic winter sport of curling and the Paralympic winter sport of wheelchair curling."/>
+    </outline>
+    <outline text="Editors">
+      <outline text="Helix" type="rss" xmlUrl="https://helix-editor.com/atom.xml" htmlUrl="https://helix-editor.com/" description="A post-modern modal text editor."/>
+      <outline text="iA" type="rss" xmlUrl="https://ia.net/feed" htmlUrl="https://ia.net/" description="We Architect Information"/>
+      <outline text="Mastering Emacs" type="rss" xmlUrl="https://www.masteringemacs.org/feed" htmlUrl="https://www.masteringemacs.org/feed" description="a blog about mastering the world's best text editor"/>
+      <outline text="Sacha Chua Emacs" type="rss" xmlUrl="https://sachachua.com/blog/category/emacs/feed/" htmlUrl="https://sachachua.com/blog/category/emacs/feed/index.xml" description="Emacs, sketches, and life"/>
+      <outline text="Zed Editor Blog" type="rss" xmlUrl="https://zed.dev/blog.rss" htmlUrl="https://zed.dev/blog" description="Zed Industries - Blog"/>
+    </outline>
+    <outline text="Linux">
+      <outline text="Debian" type="rss" xmlUrl="https://www.debian.org/News/news" htmlUrl="https://www.debian.org/News/" description="Debian Latest News"/>
+      <outline text="Fedora Magazine" type="rss" xmlUrl="https://fedoramagazine.org/feed/" htmlUrl="https://fedoramagazine.org/" description="Guides, information, and news about the Fedora operating system for users, developers, system administrators, and community members."/>
+      <outline text="KDE Development" type="rss" xmlUrl="https://pointieststick.com/feed/" htmlUrl="https://pointieststick.com/" description="Below is a brief look at recent changes in the KDE projects I work on and follow!"/>
+      <outline text="KDE Neon" type="rss" xmlUrl="https://blog.neon.kde.org/feed/" htmlUrl="https://blog.neon.kde.org/" description="The Latest KDE Software"/>
+      <outline text="LWN" type="rss" xmlUrl="https://lwn.net/headlines/newrss" htmlUrl="https://lwn.net/" description="LWN.net is a comprehensive source of news and opinions from&#10;        and about the Linux community.  This is the main LWN.net feed,&#10;        listing all articles which are posted to the site front page."/>
+      <outline text="Phoronix" type="rss" xmlUrl="https://www.phoronix.com/rss.php" htmlUrl="https://www.phoronix.com/" description="Linux Hardware Reviews, Benchmarks &amp; Open-Source News"/>
+    </outline>
+    <outline text="Programming">
+      <outline text="Andrew Kelley" type="rss" xmlUrl="https://andrewkelley.me/rss.xml" htmlUrl="https://andrewkelley.me/" description="My personal website - thoughts, project demos, research."/>
+      <outline text="Bazel" type="rss" xmlUrl="https://blog.bazel.build/feed.xml" htmlUrl="http://blog.bazel.build/" description="Fast, correct builds."/>
+      <outline text="Charm" type="rss" xmlUrl="https://charm.sh/blog/rss.xml" htmlUrl="https://charm.sh/blog" description="We write blog posts to make the command line glamorous"/>
+      <outline text="Go" type="rss" xmlUrl="https://go.dev/blog/feed.atom" htmlUrl="https://go.dev/blog/feed.atom"/>
+      <outline text="Golang Weekly" type="rss" xmlUrl="https://golangweekly.com/rss/" htmlUrl="https://golangweekly.com/" description="A weekly newsletter about the Go programming language"/>
+      <outline text="Modular" type="rss" xmlUrl="https://www.modular.com/blog/rss.xml" htmlUrl="https://www.modular.com/" description="Read the latest news from Modular, and how we are changing the world of AI infrastructure with our next generation developer platform."/>
+      <outline text="NVIDIA Developer" type="rss" xmlUrl="https://developer.nvidia.com/blog/feed" htmlUrl="https://developer.nvidia.com/blog" description="News and tutorials for developers, data scientists, and IT admins"/>
+      <outline text="Rust" type="rss" xmlUrl="https://blog.rust-lang.org/feed.xml" htmlUrl="https://blog.rust-lang.org/" description="Empowering everyone to build reliable and efficient software."/>
+      <outline text="Sutter’s Mill" type="rss" xmlUrl="https://herbsutter.com/feed/" htmlUrl="https://herbsutter.com/" description="Herb Sutter on software development"/>
+      <outline text="Swift" type="rss" xmlUrl="https://www.swift.org/atom.xml" htmlUrl="https://www.swift.org/atom.xml"/>
+    </outline>
+    <outline text="Releases">
+      <outline text="commit-mono Releases" type="rss" xmlUrl="https://github.com/eigilnikolajsen/commit-mono/releases.atom" htmlUrl="https://github.com/eigilnikolajsen/commit-mono/releases"/>
+      <outline text="FreshRSS Releases" type="rss" xmlUrl="https://github.com/FreshRSS/FreshRSS/releases.atom" htmlUrl="https://github.com/FreshRSS/FreshRSS/" description="FreshRSS releases @ GitHub"/>
+      <outline text="frigate Releases" type="rss" xmlUrl="https://github.com/blakeblackshear/frigate/releases.atom" htmlUrl="https://github.com/blakeblackshear/frigate/releases"/>
+      <outline text="Go Releases" type="rss" xmlUrl="https://github.com/golang/go/tags.atom" htmlUrl="https://github.com/golang/go/releases"/>
+      <outline text="Inter Releases" type="rss" xmlUrl="https://github.com/rsms/inter/releases.atom" htmlUrl="https://github.com/rsms/inter/releases"/>
+      <outline text="juliamono Releases" type="rss" xmlUrl="https://github.com/cormullion/juliamono/releases.atom" htmlUrl="https://github.com/cormullion/juliamono/releases"/>
+      <outline text="monaspace Releases" type="rss" xmlUrl="https://github.com/githubnext/monaspace/releases.atom" htmlUrl="https://github.com/githubnext/monaspace/releases"/>
+      <outline text="ripgrep Releases" type="rss" xmlUrl="https://github.com/BurntSushi/ripgrep/releases.atom" htmlUrl="https://github.com/BurntSushi/ripgrep/releases"/>
+      <outline text="unifi-docker Releases" type="rss" xmlUrl="https://github.com/jacobalberty/unifi-docker/releases.atom" htmlUrl="https://github.com/jacobalberty/unifi-docker/releases"/>
+      <outline text="zig Releases" type="rss" xmlUrl="https://github.com/ziglang/zig/releases.atom" htmlUrl="https://github.com/ziglang/zig/releases"/>
+    </outline>
+    <outline text="Science">
+      <outline text="Quanta Magazine" type="rss" xmlUrl="https://api.quantamagazine.org/feed/" htmlUrl="https://www.quantamagazine.org/" description="Illuminating science"/>
+    </outline>
+    <outline text="Shopping">
+      <outline text="NuPhy" type="rss" xmlUrl="https://nuphy.com/blogs/journal.atom" htmlUrl="https://nuphy.com/blogs/journal"/>
+    </outline>
+    <outline text="Tech">
+      <outline text="Apple Developer" type="rss" xmlUrl="https://developer.apple.com/news/rss/news.rss" htmlUrl="https://developer.apple.com/news/"/>
+      <outline text="Framework" type="rss" xmlUrl="https://frame.work/ca/en/blog.rss" htmlUrl="https://frame.work/ca/en" description="RSS feed for Framework Blog"/>
+      <outline text="Hello Brio" type="rss" xmlUrl="https://www.hellobrio.com/blog?format=rss" htmlUrl="https://www.hellobrio.com/blog/"/>
+      <outline text="Home Assistant" type="rss" xmlUrl="https://www.home-assistant.io/atom.xml" htmlUrl="https://www.home-assistant.io/"/>
+      <outline text="MacRumors" type="rss" xmlUrl="https://feeds.macrumors.com/MacRumors-All" htmlUrl="https://www.macrumors.com/" description="Apple, iPhone, iPad, Mac News and Rumors"/>
+      <outline text="Michael Stapelberg" type="rss" xmlUrl="https://michael.stapelberg.ch/feed.xml" htmlUrl="https://michael.stapelberg.ch/"/>
+      <outline text="NetNewsWire" type="rss" xmlUrl="https://netnewswire.blog/feed.xml" htmlUrl="https://netnewswire.blog/"/>
+      <outline text="ServeTheHome" type="rss" xmlUrl="http://feeds.feedburner.com/servethehome" htmlUrl="https://www.servethehome.com/" description="Server and Workstation Reviews"/>
+      <outline text="Slashdot" type="rss" xmlUrl="https://rss.slashdot.org/Slashdot/slashdotMain" htmlUrl="https://slashdot.org/" description="News for nerds, stuff that matters"/>
+      <outline text="Tailscale" type="rss" xmlUrl="https://tailscale.com/blog/index.xml" htmlUrl="https://tailscale.com/blog/" description="Recent blog posts from Tailscale"/>
+      <outline text="VyOS" type="rss" xmlUrl="https://blog.vyos.io/rss.xml" htmlUrl="https://blog.vyos.io/" description="VyOS Platform Project news and updates &#10;All about development and project life in  our blog"/>
+    </outline>
+  </body>
 </opml>
