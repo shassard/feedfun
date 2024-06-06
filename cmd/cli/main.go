@@ -16,6 +16,9 @@ import (
 func main() {
 	logger := slog.Default()
 
+	var noRefreshMode bool
+	flag.BoolVar(&noRefreshMode, "norefresh", false, "skip refreshing feeds on start")
+
 	var outMode string
 	flag.StringVar(&outMode, "outmode", "html", "set output mode to \"markdown\" or \"html\"")
 
@@ -48,9 +51,11 @@ func main() {
 	}
 	defer func() { _ = db.Close() }()
 
-	if err := processing.GetFeeds(db, opmlFilename); err != nil {
-		logger.Error("failed to get feeds", "error", err)
-		os.Exit(1)
+	if !noRefreshMode {
+		if err := processing.GetFeeds(db, opmlFilename); err != nil {
+			logger.Error("failed to get feeds", "error", err)
+			os.Exit(1)
+		}
 	}
 
 	maxAge := time.Duration(int64(maxAgeHours) * int64(time.Hour))
