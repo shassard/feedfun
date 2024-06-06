@@ -99,7 +99,10 @@ func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 
 	// all the root items are our buckets
 	// gotta catch them all!
-	i := b.NewIter(nil)
+	i, err := b.NewIter(nil)
+	if err != nil {
+		return err
+	}
 
 	for k := i.First(); k; k = i.Next() {
 		if v := i.Value(); v != nil {
