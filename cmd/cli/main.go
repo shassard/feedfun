@@ -14,7 +14,7 @@ import (
 // main this is a test
 func main() {
 	var outMode string
-	flag.StringVar(&outMode, "outmode", "markdown", "set output mode to \"markdown\" or \"html\"")
+	flag.StringVar(&outMode, "outmode", "html", "set output mode to \"markdown\" or \"html\"")
 
 	var opmlFilename string
 	flag.StringVar(&opmlFilename, "opml", "feeds.opml", "opml filename")

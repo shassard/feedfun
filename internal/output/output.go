@@ -1,8 +1,9 @@
 package output
 
 import (
+	_ "embed"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sort"
 	"time"
 
@@ -22,18 +23,22 @@ const (
 
 var ErrUnknownMode = fmt.Errorf("unknown mode")
 
+//go:embed style.css
+var stylesheet string
+
 // outputItemsHTML write items to disk in html format.
 func outputItemsHTML(items []*f.Item) error {
 	// header
 	data := []byte(
-		`<html>
+		fmt.Sprintf(`<html>
 <head>
-<link rel="stylesheet" type="text/css" href="style.css" />
+<title>Feeds</title>
+<style>%s</style>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta name="viewport" content="initial-scale=1.0" />
 </head>
 <body>
-`)
+`, stylesheet))
 	loc := time.Now().Location()
 
 	var lastItemTime *time.Time
@@ -55,7 +60,7 @@ func outputItemsHTML(items []*f.Item) error {
 	// footer
 	data = append(data, []byte("</body>\n</html>\n")...)
 
-	if err := ioutil.WriteFile(fmt.Sprintf("%s.html", FilenameBase), data, 0600); err != nil {
+	if err := os.WriteFile(fmt.Sprintf("%s.html", FilenameBase), data, 0600); err != nil {
 		return err
 	}
 
@@ -82,7 +87,7 @@ func outputItemsMarkdown(items []*f.Item) error {
 		lastItemTime = &item.Published
 	}
 
-	if err := ioutil.WriteFile(fmt.Sprintf("%s.md", FilenameBase), data, 0600); err != nil {
+	if err := os.WriteFile(fmt.Sprintf("%s.md", FilenameBase), data, 0600); err != nil {
 		return err
 	}
 
