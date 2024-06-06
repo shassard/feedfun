@@ -21,7 +21,7 @@ const (
 	HTMLOutputMode
 )
 
-var ErrUnknownMode = fmt.Errorf("unknown mode")
+var ErrUnknownMode = fmt.Errorf("unknown output mode")
 
 //go:embed style.css
 var stylesheet string
