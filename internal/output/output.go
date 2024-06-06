@@ -89,7 +89,7 @@ func outputItemsMarkdown(items []*f.Item) error {
 	return nil
 }
 
-// WriteItems read items from a bolt db and output them in the mode requested.
+// WriteItems read items from the pebble db and output them in the mode requested.
 func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 	json := jsonIter.ConfigFastest
 
