@@ -6,7 +6,6 @@
     </head>
     <body>
         <outline text="News" title="News">
-            <outline type="rss" text="Peace Arch News" title="Peace Arch News" xmlUrl="https://www.peacearchnews.com/feed/" htmlUrl="https://www.peacearchnews.com/"/>
             <outline type="rss" text="CBC News BC" title="CBC News BC" xmlUrl="https://rss.cbc.ca/lineup/canada-britishcolumbia.xml" htmlUrl="https://www.cbc.ca/news/canada/british-columbia"/>
         </outline>
         <outline text="Programming" title="Programming">
