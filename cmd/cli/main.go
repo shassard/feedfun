@@ -25,8 +25,8 @@ func main() {
 	var opmlFilename string
 	flag.StringVar(&opmlFilename, "opml", "feeds.opml", "opml filename")
 
-	var dbFilename string
-	flag.StringVar(&dbFilename, "db", "data.db", "database filename")
+	var dbDirname string
+	flag.StringVar(&dbDirname, "db", "data.db", "pebble database directory name")
 
 	var maxAgeHours uint
 	flag.UintVar(&maxAgeHours, "hours", 48, "output articles published within this many hours")
@@ -44,7 +44,7 @@ func main() {
 		mode = output.UnknownOutputMode
 	}
 
-	db, err := pebble.Open(dbFilename, &pebble.Options{})
+	db, err := pebble.Open(dbDirname, &pebble.Options{})
 	if err != nil {
 		logger.Error("failed to open database", "error", err)
 		os.Exit(1)
