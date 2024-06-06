@@ -123,3 +123,31 @@ GatherFeeds:
 
 	return nil
 }
+
+// PruneDatabase will delete entries from the KV store which have been published before maxAge
+func PruneDatabase(db *pebble.DB, maxAge time.Duration) error {
+	json := jsonIter.ConfigFastest
+
+	i, err := db.NewIter(nil)
+
+	if err != nil {
+		return err
+	}
+
+	for k := i.First(); k; k = i.Next() {
+		if v := i.Value(); v != nil {
+
+			var item f.Item
+			if err := json.Unmarshal(v, &item); err != nil {
+				return fmt.Errorf("failed to unmarshal value: %w", err)
+			}
+
+			// apply the cutoff date and collect recent items
+			if item.Published.Before(time.Now().Add(-maxAge)) {
+				db.Delete(i.Key(), nil)
+			}
+		}
+	}
+
+	return nil
+}
