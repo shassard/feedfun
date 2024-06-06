@@ -2,7 +2,8 @@ package main
 
 import (
 	"flag"
-	"log"
+	"log/slog"
+	"os"
 	"time"
 
 	"github.com/shassard/feedfun/internal/output"
@@ -13,6 +14,8 @@ import (
 
 // main this is a test
 func main() {
+	logger := slog.Default()
+
 	var outMode string
 	flag.StringVar(&outMode, "outmode", "html", "set output mode to \"markdown\" or \"html\"")
 
@@ -38,17 +41,21 @@ func main() {
 		mode = output.UnknownOutputMode
 	}
 
-	db, err := pebble.Open(dbFilename, nil)
+	db, err := pebble.Open(dbFilename, &pebble.Options{})
 	if err != nil {
-		log.Fatalf("failed to open database: %v", err)
+		logger.Error("failed to open database", "error", err)
+		os.Exit(1)
 	}
 	defer func() { _ = db.Close() }()
 
 	if err := processing.GetFeeds(db, opmlFilename); err != nil {
-		log.Fatalf("failed to get feeds: %v", err)
+		logger.Error("failed to get feeds", "error", err)
+		os.Exit(1)
 	}
 
-	if err := output.WriteItems(db, mode, time.Duration(int64(maxAgeHours)*int64(time.Hour))); err != nil {
-		log.Fatalf("failed to output items: %v", err)
+	maxAge := time.Duration(int64(maxAgeHours) * int64(time.Hour))
+	if err := output.WriteItems(db, mode, maxAge); err != nil {
+		logger.Error("failed to output items", "error", err)
+		os.Exit(1)
 	}
 }
