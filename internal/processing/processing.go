@@ -134,23 +134,26 @@ func PruneDatabase(db *pebble.DB, maxAge time.Duration) error {
 		return err
 	}
 
+	var retErr error
 	for k := i.First(); k; k = i.Next() {
 		if v := i.Value(); v != nil {
-
 			var item f.Item
 			if err := json.Unmarshal(v, &item); err != nil {
-				return fmt.Errorf("failed to unmarshal value: %w", err)
+				log.Printf("failed to unmarshal value %s for item %s: %w", v, i.Key(), err)
+				retErr = err
+				continue
 			}
 
 			// apply the cutoff date and collect recent items
 			if item.Published.Before(time.Now().Add(-maxAge)) {
 				if err := db.Delete(i.Key(), nil); err != nil {
-					// consider a continue and log warning?
-					return err
+					log.Printf("failed to delete key %s: %v", i.Key(), err)
+					retErr = err
+					continue
 				}
 			}
 		}
 	}
 
-	return nil
+	return retErr
 }
