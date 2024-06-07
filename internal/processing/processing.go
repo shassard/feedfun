@@ -144,7 +144,10 @@ func PruneDatabase(db *pebble.DB, maxAge time.Duration) error {
 
 			// apply the cutoff date and collect recent items
 			if item.Published.Before(time.Now().Add(-maxAge)) {
-				db.Delete(i.Key(), nil)
+				if err := db.Delete(i.Key(), nil); err != nil {
+					// consider a continue and log warning?
+					return err
+				}
 			}
 		}
 	}
