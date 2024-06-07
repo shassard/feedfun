@@ -2,7 +2,7 @@ package opml
 
 import (
 	"encoding/xml"
-	"io/ioutil"
+	"os"
 
 	"github.com/shassard/feedfun/internal/feed"
 )
@@ -44,7 +44,7 @@ func processOutline(outs []Outline) []*feed.Feed {
 
 // GetFeedsFromOPML return a list of feeds found in an OPML file
 func GetFeedsFromOPML(filename string) ([]*feed.Feed, error) {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
