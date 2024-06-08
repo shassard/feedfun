@@ -37,7 +37,9 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr 
 		} else if item.UpdatedParsed != nil {
 			published = *item.UpdatedParsed
 		} else {
-			published = time.Now()
+			// no publish time, then use something stable (and old!)
+			// so it doesn't keep popping up at the top of our feeds
+			published = time.Unix(0, 0)
 		}
 
 		article := f.Item{
@@ -83,8 +85,9 @@ GatherFeeds:
 	for {
 		select {
 		case article := <-feedItemChan:
-			key := []byte(article.GetPrefix() + article.GetKey())
-			// don't put articles that are already in the store
+			key := article.GetKey()
+
+			// put articles that aren't already in the store
 			if _, closer, err := b.Get(key); err == pebble.ErrNotFound {
 				data, err := json.Marshal(&article)
 				if err != nil {
@@ -139,7 +142,7 @@ func PruneDatabase(db *pebble.DB, maxAge time.Duration) error {
 		if v := i.Value(); v != nil {
 			var item f.Item
 			if err := json.Unmarshal(v, &item); err != nil {
-				log.Printf("failed to unmarshal value %s for item %s: %w", v, i.Key(), err)
+				log.Printf("failed to unmarshal value %s for item %s: %v", v, i.Key(), err)
 				retErr = err
 				continue
 			}

@@ -1,12 +1,13 @@
 package feed
 
 import (
-	"fmt"
+	"bytes"
 	"time"
 )
 
-const (
-	KeySeparator = '|'
+var (
+	KeySeparator     = []byte("|")
+	KeyVerIdentifier = []byte("v2")
 )
 
 // Feed rss or atom feed with an optional replacement title.
@@ -37,12 +38,15 @@ func (i SortedFeedItems) Less(x, y int) bool {
 	return i[x].Published.Before(i[y].Published)
 }
 
-// GetPrefix get the prefix for the key for storage to the KV store.
-func (i *Item) GetPrefix() string {
-	return fmt.Sprintf("%s%c", i.FeedURL, KeySeparator)
-}
-
 // GetKey get the key that should be used for uniquely identifying this feed item suitable for use in a KV store.
-func (i *Item) GetKey() string {
-	return fmt.Sprintf("%s%c%s", i.FeedTitle, KeySeparator, i.Link)
+func (i *Item) GetKey() []byte {
+	return bytes.Join(
+		[][]byte{
+			KeyVerIdentifier,
+			[]byte(i.FeedURL),
+			[]byte(i.FeedTitle),
+			[]byte(i.Link),
+			[]byte(i.Published.Format(time.RFC3339)),
+		},
+		KeySeparator)
 }

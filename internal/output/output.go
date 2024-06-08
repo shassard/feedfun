@@ -1,8 +1,10 @@
 package output
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
+	"log"
 	"os"
 	"sort"
 	"time"
@@ -112,14 +114,47 @@ func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 	for k := i.First(); k; k = i.Next() {
 		if v := i.Value(); v != nil {
 
-			var item f.Item
-			if err := json.Unmarshal(v, &item); err != nil {
-				return fmt.Errorf("failed to unmarshal value: %w", err)
-			}
+			// split the fields from our key
+			key := i.Key()
+			keyParts := bytes.Split(key, []byte(string(f.KeySeparator)))
 
-			// apply the cutoff date and collect recent items
-			if item.Published.After(time.Now().Add(-maxAge)) {
-				itemsToPrint = append(itemsToPrint, &item)
+			switch len(keyParts) {
+
+			case 5: // current
+				if !bytes.Equal(keyParts[0], f.KeyVerIdentifier) {
+					log.Printf("invalid key value identifier: %s", keyParts[0])
+					continue
+				}
+
+				itemPublishTime := keyParts[4]
+				t, err := time.Parse(time.RFC3339, string(itemPublishTime))
+				if err != nil {
+					log.Printf("failed to convert kv key publish time component [%+v]: %v", keyParts, err)
+					continue
+				}
+
+				// apply the cutoff date and collect recent items
+				if t.After(time.Now().Add(-maxAge)) {
+					var item f.Item
+					if err := json.Unmarshal(v, &item); err != nil {
+						return fmt.Errorf("failed to unmarshal value: %w", err)
+					}
+
+					itemsToPrint = append(itemsToPrint, &item)
+				}
+
+			case 3: // legacy
+				var item f.Item
+				if err := json.Unmarshal(v, &item); err != nil {
+					return fmt.Errorf("failed to unmarshal value: %w", err)
+				}
+				// apply the cutoff date and collect recent items
+				if item.Published.After(time.Now().Add(-maxAge)) {
+					itemsToPrint = append(itemsToPrint, &item)
+				}
+
+			default: // wtf?
+				log.Printf("found unexpected part count [%d]: %s", len(keyParts), key)
 			}
 		}
 	}
