@@ -78,7 +78,7 @@ func httpDaemon(config *Config) int {
 	ticker := time.NewTicker(config.refreshTicker)
 	go func() {
 		for ; true; <-ticker.C {
-			slog.Info("refreshing feeds on tick")
+			start := time.Now()
 			if err := processing.GetFeeds(db, config.opmlFilename); err != nil {
 				slog.Error("failed to get feeds on tick", "error", err)
 			}
@@ -86,6 +86,7 @@ func httpDaemon(config *Config) int {
 			if err != nil {
 				slog.Error("failed to output items", "error", err)
 			}
+			slog.Info("refreshed feeds on tick", "took", time.Since(start))
 		}
 	}()
 

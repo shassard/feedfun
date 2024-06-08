@@ -61,6 +61,7 @@ func generateItemsHTML(items []*f.Item) ([]byte, error) {
 	}
 
 	// footer
+	data = append(data, []byte(fmt.Sprintf("<p><small>Generated: %s</small></p>", time.Now()))...)
 	data = append(data, []byte("</body>\n</html>\n")...)
 
 	return data, nil
