@@ -49,7 +49,11 @@ func main() {
 		logger.Error("failed to open database", "error", err)
 		os.Exit(1)
 	}
-	defer func() { _ = db.Close() }()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.Error("failed to close database", "error", err)
+		}
+	}()
 
 	if !noRefreshMode {
 		if err := processing.GetFeeds(db, opmlFilename); err != nil {

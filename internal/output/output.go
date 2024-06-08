@@ -4,7 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"sort"
 	"time"
@@ -122,14 +122,17 @@ func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 
 			case 5: // current
 				if !bytes.Equal(keyParts[0], f.KeyVerIdentifier) {
-					log.Printf("invalid key value identifier: %s", keyParts[0])
+					slog.Warn("invalid key value identifier",
+						"key_parts", keyParts[0])
 					continue
 				}
 
 				itemPublishTime := keyParts[4]
 				t, err := time.Parse(time.RFC3339, string(itemPublishTime))
 				if err != nil {
-					log.Printf("failed to convert kv key publish time component [%+v]: %v", keyParts, err)
+					slog.Warn("failed to convert kv key publish time component",
+						"key_parts", keyParts,
+						"error", err)
 					continue
 				}
 
@@ -154,9 +157,19 @@ func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 				}
 
 			default: // wtf?
-				log.Printf("found unexpected part count [%d]: %s", len(keyParts), key)
+				slog.Warn("found unexpected part count",
+					"parts_count", len(keyParts),
+					"key", key)
 			}
 		}
+	}
+
+	if err := i.Close(); err != nil {
+		slog.Error("error closing iterator", "error", err)
+	}
+
+	if err := b.Close(); err != nil {
+		slog.Error("error closing batch", "error", err)
 	}
 
 	// newest items to the top

@@ -3,7 +3,7 @@ package processing
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	f "github.com/shassard/feedfun/internal/feed"
@@ -109,7 +109,7 @@ GatherFeeds:
 			}
 
 		case err := <-errChan:
-			log.Printf("%s", err)
+			slog.Error("feed processing error", "error", err)
 
 		case <-doneChan:
 			feedProcessesWaiting--
@@ -121,7 +121,7 @@ GatherFeeds:
 	}
 
 	if err := b.Commit(nil); err != nil {
-		log.Printf("commit error: %v", err)
+		slog.Error("commit error", "error", err)
 	}
 
 	return nil
@@ -142,7 +142,10 @@ func PruneDatabase(db *pebble.DB, maxAge time.Duration) error {
 		if v := i.Value(); v != nil {
 			var item f.Item
 			if err := json.Unmarshal(v, &item); err != nil {
-				log.Printf("failed to unmarshal value %s for item %s: %v", v, i.Key(), err)
+				slog.Warn("failed to unmarshal value for item",
+					"value", v,
+					"key", i.Key(),
+					"error", err)
 				retErr = err
 				continue
 			}
@@ -150,7 +153,9 @@ func PruneDatabase(db *pebble.DB, maxAge time.Duration) error {
 			// apply the cutoff date and collect recent items
 			if item.Published.Before(time.Now().Add(-maxAge)) {
 				if err := db.Delete(i.Key(), nil); err != nil {
-					log.Printf("failed to delete key %s: %v", i.Key(), err)
+					slog.Warn("failed to delete key",
+						"key", i.Key(),
+						"error", err)
 					retErr = err
 					continue
 				}
