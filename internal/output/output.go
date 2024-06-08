@@ -52,10 +52,18 @@ func generateItemsHTML(items []*f.Item) ([]byte, error) {
 				[]byte(fmt.Sprintf("<h1>%s</h1>\n\n", item.Published.In(loc).Format(HeaderDateFormat)))...)
 		}
 
-		data = append(data, []byte(
-			fmt.Sprintf(
-				"<p><a href=\"%s\">%s</a> <small>%s @ %s</small></p>\n",
-				item.Link, item.Title, item.FeedTitle, item.Published.In(loc)))...)
+		data = append(data,
+			[]byte(
+				fmt.Sprintf(
+					"<p><a href=\"%s\">%s</a> <small>%s @ %s</small></p>\n",
+					item.Link, item.Title, item.FeedTitle, item.Published.In(loc)))...)
+		if len(item.Summary) > 0 {
+			data = append(data,
+				[]byte(
+					fmt.Sprintf(
+						"<p><small>%s</small></p>\n",
+						item.Summary))...)
+		}
 
 		lastItemTime = &item.Published
 	}

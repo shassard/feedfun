@@ -2,7 +2,12 @@ package feed
 
 import (
 	"bytes"
+	"context"
+	"fmt"
+	"log/slog"
 	"time"
+
+	openai "github.com/sashabaranov/go-openai"
 )
 
 var (
@@ -23,6 +28,7 @@ type Item struct {
 	Title     string
 	Link      string
 	Content   string
+	Summary   string
 	Published time.Time
 }
 
@@ -49,4 +55,34 @@ func (i *Item) GetKey() []byte {
 			[]byte(i.Published.Format(time.RFC3339)),
 		},
 		KeySeparator)
+}
+
+func (i *Item) GenerateSummary(client *openai.Client) error {
+	if client == nil {
+		return nil
+	}
+
+	slog.Info("generating summary for article", "link", i.Link)
+
+	// TODO: add timeout cancellation since this hangs often!
+	resp, err := client.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model: openai.GPT3Dot5Turbo,
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: fmt.Sprintf("Create a two sentence summary of %s", i.Link),
+				},
+			},
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	i.Summary = resp.Choices[0].Message.Content
+
+	return nil
 }

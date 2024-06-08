@@ -12,16 +12,19 @@ import (
 	"github.com/shassard/feedfun/internal/processing"
 
 	"github.com/cockroachdb/pebble"
+	openai "github.com/sashabaranov/go-openai"
 )
 
 type Config struct {
-	noRefreshMode bool
-	opmlFilename  string
-	dbDirname     string
-	maxAgeHours   uint
 	daemonMode    bool
 	daemonPort    uint
+	dbDirname     string
+	maxAgeHours   uint
 	mode          int
+	noRefreshMode bool
+	openaiClient  *openai.Client
+	openaiToken   string
+	opmlFilename  string
 	refreshTicker time.Duration
 }
 
@@ -40,7 +43,7 @@ func oneShot(config *Config) int {
 	}()
 
 	if !config.noRefreshMode {
-		if err := processing.GetFeeds(db, config.opmlFilename); err != nil {
+		if err := processing.GetFeeds(db, config.opmlFilename, config.openaiClient); err != nil {
 			slog.Error("failed to get feeds", "error", err)
 			return 1
 		}
@@ -79,7 +82,7 @@ func httpDaemon(config *Config) int {
 	go func() {
 		for ; true; <-ticker.C {
 			start := time.Now()
-			if err := processing.GetFeeds(db, config.opmlFilename); err != nil {
+			if err := processing.GetFeeds(db, config.opmlFilename, config.openaiClient); err != nil {
 				slog.Error("failed to get feeds on tick", "error", err)
 			}
 			out, err = output.WriteItems(db, config.mode, maxAge)
@@ -126,8 +129,13 @@ func main() {
 	flag.UintVar(&config.daemonPort, "port", 8173, "port which the daemon will listen on")
 	var refreshTicker string
 	flag.StringVar(&refreshTicker, "refreshticker", "1h", "duration to wait before refreshing feeds")
+	flag.StringVar(&config.openaiToken, "openaitoken", "", "openai token for chatgpt integration")
 
 	flag.Parse()
+
+	if config.openaiToken != "" {
+		config.openaiClient = openai.NewClient(config.openaiToken)
+	}
 
 	config.refreshTicker, err = time.ParseDuration(refreshTicker)
 	if err != nil {
