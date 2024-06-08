@@ -86,6 +86,7 @@ GatherFeeds:
 		select {
 		case article := <-feedItemChan:
 			key := article.GetKey()
+			slog.Debug("article key", "key", key)
 
 			// put articles that aren't already in the store
 			if _, closer, err := b.Get(key); err == pebble.ErrNotFound {
