@@ -93,6 +93,10 @@ func httpDaemon(config *Config) int {
 	http.HandleFunc(
 		"/",
 		func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/" {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
 			_, err = w.Write(out)
 			if err != nil {
 				slog.Error("failed to write client output", "error", err)
