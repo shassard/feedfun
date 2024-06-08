@@ -72,23 +72,12 @@ func httpDaemon(config *Config) int {
 		}
 	}()
 
-	slog.Info("refreshing feeds on startup")
-	if err := processing.GetFeeds(db, config.opmlFilename); err != nil {
-		slog.Error("failed to get feeds on startup", "error", err)
-	}
-
-	var out []byte
-
-	out, err = output.WriteItems(db, config.mode, maxAge)
-	if err != nil {
-		slog.Error("failed to output items", "error", err)
-	}
+	out := []byte("generating index page. please reload in a few moments ...")
 
 	slog.Info("created refresh ticker", "duration", config.refreshTicker)
 	ticker := time.NewTicker(config.refreshTicker)
 	go func() {
-		for {
-			<-ticker.C
+		for ; true; <-ticker.C {
 			slog.Info("refreshing feeds on tick")
 			if err := processing.GetFeeds(db, config.opmlFilename); err != nil {
 				slog.Error("failed to get feeds on tick", "error", err)
