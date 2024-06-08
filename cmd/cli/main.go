@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"time"
 
@@ -12,59 +14,145 @@ import (
 	"github.com/cockroachdb/pebble"
 )
 
-// main this is a test
-func main() {
-	logger := slog.Default()
+type Config struct {
+	noRefreshMode bool
+	opmlFilename  string
+	dbDirname     string
+	maxAgeHours   uint
+	daemonMode    bool
+	daemonPort    uint
+	mode          int
+	refreshTicker time.Duration
+}
 
-	var noRefreshMode bool
-	flag.BoolVar(&noRefreshMode, "norefresh", false, "skip refreshing feeds on start")
+func oneShot(config *Config) int {
+	slog.Info("running in one-shot mode")
 
-	var outMode string
-	flag.StringVar(&outMode, "outmode", "html", "set output mode to \"markdown\" or \"html\"")
-
-	var opmlFilename string
-	flag.StringVar(&opmlFilename, "opml", "feeds.opml", "opml filename")
-
-	var dbDirname string
-	flag.StringVar(&dbDirname, "db", "data.db", "pebble database directory name")
-
-	var maxAgeHours uint
-	flag.UintVar(&maxAgeHours, "hours", 48, "output articles published within this many hours")
-
-	flag.Parse()
-
-	var mode int
-
-	switch outMode {
-	case "html":
-		mode = output.HTMLOutputMode
-	case "markdown":
-		mode = output.MarkdownOutputMode
-	default:
-		mode = output.UnknownOutputMode
-	}
-
-	db, err := pebble.Open(dbDirname, &pebble.Options{})
+	db, err := pebble.Open(config.dbDirname, &pebble.Options{})
 	if err != nil {
-		logger.Error("failed to open database", "error", err)
-		os.Exit(1)
+		slog.Error("failed to open database", "error", err)
+		return 1
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			logger.Error("failed to close database", "error", err)
+			slog.Error("failed to close database", "error", err)
 		}
 	}()
 
-	if !noRefreshMode {
-		if err := processing.GetFeeds(db, opmlFilename); err != nil {
-			logger.Error("failed to get feeds", "error", err)
-			os.Exit(1)
+	if !config.noRefreshMode {
+		if err := processing.GetFeeds(db, config.opmlFilename); err != nil {
+			slog.Error("failed to get feeds", "error", err)
+			return 1
 		}
 	}
 
-	maxAge := time.Duration(int64(maxAgeHours) * int64(time.Hour))
-	if err := output.WriteItems(db, mode, maxAge); err != nil {
-		logger.Error("failed to output items", "error", err)
+	maxAge := time.Duration(int64(config.maxAgeHours) * int64(time.Hour))
+	_, err = output.WriteItems(db, config.mode, maxAge)
+	if err != nil {
+		slog.Error("failed to output items", "error", err)
+		return 1
+	}
+
+	return 0
+}
+
+func httpDaemon(config *Config) int {
+	slog.Info("running in daemon mode")
+
+	maxAge := time.Duration(int64(config.maxAgeHours) * int64(time.Hour))
+
+	db, err := pebble.Open(config.dbDirname, &pebble.Options{})
+	if err != nil {
+		slog.Error("failed to open database", "error", err)
+		return 1
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			slog.Error("failed to close database", "error", err)
+		}
+	}()
+
+	slog.Info("refreshing feeds on startup")
+	if err := processing.GetFeeds(db, config.opmlFilename); err != nil {
+		slog.Error("failed to get feeds on startup", "error", err)
+	}
+
+	var out []byte
+
+	out, err = output.WriteItems(db, config.mode, maxAge)
+	if err != nil {
+		slog.Error("failed to output items", "error", err)
+	}
+
+	slog.Info("created refresh ticker", "duration", config.refreshTicker)
+	ticker := time.NewTicker(config.refreshTicker)
+	go func() {
+		for {
+			<-ticker.C
+			slog.Info("refreshing feeds on tick")
+			if err := processing.GetFeeds(db, config.opmlFilename); err != nil {
+				slog.Error("failed to get feeds on tick", "error", err)
+			}
+			out, err = output.WriteItems(db, config.mode, maxAge)
+			if err != nil {
+				slog.Error("failed to output items", "error", err)
+			}
+		}
+	}()
+
+	// setup an http router and handler
+	http.HandleFunc(
+		"/",
+		func(w http.ResponseWriter, r *http.Request) {
+			_, err = w.Write(out)
+			if err != nil {
+				slog.Error("failed to write client output", "error", err)
+				return
+			}
+		})
+
+	slog.Info("listening for http requests", "port", config.daemonPort)
+	slog.Error("failed to listen and serve http", "error", http.ListenAndServe(fmt.Sprintf(":%d", config.daemonPort), nil))
+
+	return 0
+}
+
+// main this is a test
+func main() {
+	var err error
+	var config Config
+
+	flag.BoolVar(&config.noRefreshMode, "norefresh", false, "skip refreshing feeds on start")
+	var outMode string // temporary varible to setup our mode enum
+	flag.StringVar(&outMode, "outmode", "html", "set output mode to \"markdown\" or \"html\"")
+	flag.StringVar(&config.opmlFilename, "opml", "feeds.opml", "opml filename")
+	flag.StringVar(&config.dbDirname, "db", "data.db", "pebble database directory name")
+	flag.UintVar(&config.maxAgeHours, "hours", 48, "output articles published within this many hours")
+	flag.BoolVar(&config.daemonMode, "daemon", false, "enable http listener daemon")
+	flag.UintVar(&config.daemonPort, "port", 8173, "port which the daemon will listen on")
+	var refreshTicker string
+	flag.StringVar(&refreshTicker, "refreshticker", "1h", "duration to wait before refreshing feeds")
+
+	flag.Parse()
+
+	config.refreshTicker, err = time.ParseDuration(refreshTicker)
+	if err != nil {
+		slog.Error("failed to parse refreshticker duration", "error", err)
 		os.Exit(1)
+	}
+
+	switch outMode {
+	case "html":
+		config.mode = output.HTMLOutputMode
+	case "markdown":
+		config.mode = output.MarkdownOutputMode
+	default:
+		config.mode = output.UnknownOutputMode
+	}
+
+	if config.daemonMode {
+		os.Exit(httpDaemon(&config))
+	} else {
+		os.Exit(oneShot(&config))
 	}
 }

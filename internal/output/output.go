@@ -18,6 +18,7 @@ import (
 const (
 	HeaderDateFormat  = "Monday January 2, 2006"
 	FilenameBase      = "index"
+	FileMode          = 0600
 	UnknownOutputMode = iota
 	MarkdownOutputMode
 	HTMLOutputMode
@@ -28,8 +29,8 @@ var ErrUnknownMode = fmt.Errorf("unknown output mode")
 //go:embed style.css
 var stylesheet string
 
-// outputItemsHTML write items to disk in html format.
-func outputItemsHTML(items []*f.Item) error {
+// generateItemsHTML write items to disk in html format.
+func generateItemsHTML(items []*f.Item) ([]byte, error) {
 	// header
 	data := []byte(
 		fmt.Sprintf(`<html>
@@ -62,15 +63,11 @@ func outputItemsHTML(items []*f.Item) error {
 	// footer
 	data = append(data, []byte("</body>\n</html>\n")...)
 
-	if err := os.WriteFile(fmt.Sprintf("%s.html", FilenameBase), data, 0600); err != nil {
-		return err
-	}
-
-	return nil
+	return data, nil
 }
 
-// outputItemsMarkdown write items to disk in markdown format.
-func outputItemsMarkdown(items []*f.Item) error {
+// generateItemsMarkdown write items to disk in markdown format.
+func generateItemsMarkdown(items []*f.Item) ([]byte, error) {
 	var data []byte
 
 	loc := time.Now().Location()
@@ -89,15 +86,11 @@ func outputItemsMarkdown(items []*f.Item) error {
 		lastItemTime = &item.Published
 	}
 
-	if err := os.WriteFile(fmt.Sprintf("%s.md", FilenameBase), data, 0600); err != nil {
-		return err
-	}
-
-	return nil
+	return data, nil
 }
 
 // WriteItems read items from the pebble db and output them in the mode requested.
-func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
+func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) ([]byte, error) {
 	json := jsonIter.ConfigFastest
 
 	itemsToPrint := make([]*f.Item, 0)
@@ -108,7 +101,7 @@ func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 	// gotta catch them all!
 	i, err := b.NewIter(nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for k := i.First(); k; k = i.Next() {
@@ -140,7 +133,7 @@ func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 				if t.After(time.Now().Add(-maxAge)) {
 					var item f.Item
 					if err := json.Unmarshal(v, &item); err != nil {
-						return fmt.Errorf("failed to unmarshal value: %w", err)
+						return nil, fmt.Errorf("failed to unmarshal value: %w", err)
 					}
 
 					itemsToPrint = append(itemsToPrint, &item)
@@ -149,7 +142,7 @@ func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 			case 3: // legacy
 				var item f.Item
 				if err := json.Unmarshal(v, &item); err != nil {
-					return fmt.Errorf("failed to unmarshal value: %w", err)
+					return nil, fmt.Errorf("failed to unmarshal value: %w", err)
 				}
 				// apply the cutoff date and collect recent items
 				if item.Published.After(time.Now().Add(-maxAge)) {
@@ -175,18 +168,30 @@ func WriteItems(db *pebble.DB, mode int, maxAge time.Duration) error {
 	// newest items to the top
 	sort.Sort(sort.Reverse(f.SortedFeedItems(itemsToPrint)))
 
+	var data []byte
+
 	switch mode {
 	case HTMLOutputMode:
-		if err := outputItemsHTML(itemsToPrint); err != nil {
-			return fmt.Errorf("failed to write items: %w", err)
+		data, err = generateItemsHTML(itemsToPrint)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write items: %w", err)
 		}
+		if err := os.WriteFile(fmt.Sprintf("%s.html", FilenameBase), data, FileMode); err != nil {
+			return nil, err
+		}
+
 	case MarkdownOutputMode:
-		if err := outputItemsMarkdown(itemsToPrint); err != nil {
-			return fmt.Errorf("failed to write items: %w", err)
+		data, err = generateItemsMarkdown(itemsToPrint)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write items: %w", err)
 		}
+		if err := os.WriteFile(fmt.Sprintf("%s.md", FilenameBase), data, FileMode); err != nil {
+			return nil, err
+		}
+
 	case UnknownOutputMode:
-		return ErrUnknownMode
+		return nil, ErrUnknownMode
 	}
 
-	return nil
+	return data, nil
 }
