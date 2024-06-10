@@ -12,7 +12,6 @@ import (
 	"github.com/cockroachdb/pebble"
 	jsonIter "github.com/json-iterator/go"
 	"github.com/mmcdole/gofeed"
-	openai "github.com/sashabaranov/go-openai"
 )
 
 // processFeed read a feed and emit items to itemChan.
@@ -58,7 +57,7 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr 
 }
 
 // GetFeeds read OPML subscriptions and populate db with items.
-func GetFeeds(db *pebble.DB, opmlFilename string, client *openai.Client) error {
+func GetFeeds(db *pebble.DB, opmlFilename string, generateSummaries bool, model string) error {
 	json := jsonIter.ConfigFastest
 
 	feeds, err := opml.GetFeedsFromOPML(opmlFilename)
@@ -91,8 +90,10 @@ GatherFeeds:
 
 			// put articles that aren't already in the store
 			if _, closer, err := b.Get(key); err == pebble.ErrNotFound {
-				if err := article.GenerateSummary(client); err != nil {
-					errChan <- fmt.Errorf("error generating article summary %v: %w", article, err)
+				if generateSummaries {
+					if err := article.GenerateSummary(model); err != nil {
+						errChan <- fmt.Errorf("error generating article summary %v: %w", article, err)
+					}
 				}
 				data, err := json.Marshal(&article)
 				if err != nil {

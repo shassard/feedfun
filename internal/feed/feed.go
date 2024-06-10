@@ -2,12 +2,13 @@ package feed
 
 import (
 	"bytes"
-	"context"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"time"
 
-	openai "github.com/sashabaranov/go-openai"
+	jsonIter "github.com/json-iterator/go"
 )
 
 var (
@@ -30,6 +31,23 @@ type Item struct {
 	Content   string
 	Summary   string
 	Published time.Time
+}
+
+type OllamaRequest struct {
+	Model  string `json:"model"`
+	Stream bool   `json:"stream"`
+	Prompt string `json:"prompt"`
+}
+
+type OllamaResponse struct {
+	Response           string `json:"response"`
+	Done               bool   `json:"done"`
+	DoneReason         string `json:"done_reason"`
+	TotalDuration      uint64 `json:"total_duration"`
+	LoadDuration       uint64 `json:"load_duration"`
+	PromptEvalDuration uint64 `json:"prompt_eval_duration"`
+	EvalCount          uint64 `json:"eval_count"`
+	EvalDuration       uint64 `json:"eval_duration"`
 }
 
 // sortedFeedItems utility functions to sort a list of Item.
@@ -57,32 +75,42 @@ func (i *Item) GetKey() []byte {
 		KeySeparator)
 }
 
-func (i *Item) GenerateSummary(client *openai.Client) error {
-	if client == nil {
-		return nil
-	}
+func (i *Item) GenerateSummary(model string) error {
+	json := jsonIter.ConfigFastest
 
 	slog.Info("generating summary for article", "link", i.Link)
 
-	// TODO: add timeout cancellation since this hangs often!
-	resp, err := client.CreateChatCompletion(
-		context.Background(),
-		openai.ChatCompletionRequest{
-			Model: openai.GPT3Dot5Turbo,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: fmt.Sprintf("Create a two sentence summary of %s", i.Link),
-				},
-			},
-		},
-	)
+	prompt := fmt.Sprintf("Generate a two sentence summary of %s", i.Link)
 
+	oReq := OllamaRequest{Model: model, Stream: false, Prompt: prompt}
+
+	postData, err := json.Marshal(&oReq)
+	if err != nil {
+		return err
+	}
+	buf := bytes.NewReader(postData)
+
+	resp, err := http.Post("http://localhost:11434/api/generate", "application/json", buf)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 
-	i.Summary = resp.Choices[0].Message.Content
+	var oResp OllamaResponse
+	if err := json.Unmarshal(body, &oResp); err != nil {
+		return err
+	}
+
+	if !oResp.Done && oResp.DoneReason != "stop" {
+		return fmt.Errorf("ollama did not finish: %t %s", oResp.Done, oResp.DoneReason)
+	}
+
+	i.Summary = oResp.Response
 
 	return nil
 }
