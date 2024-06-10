@@ -49,6 +49,7 @@
       <outline text="ripgrep Releases" type="rss" xmlUrl="https://github.com/BurntSushi/ripgrep/releases.atom" htmlUrl="https://github.com/BurntSushi/ripgrep/releases"/>
       <outline text="unifi-docker Releases" type="rss" xmlUrl="https://github.com/jacobalberty/unifi-docker/releases.atom" htmlUrl="https://github.com/jacobalberty/unifi-docker/releases"/>
       <outline text="zig Releases" type="rss" xmlUrl="https://github.com/ziglang/zig/releases.atom" htmlUrl="https://github.com/ziglang/zig/releases"/>
+      <outline text="Ollama Releases" type="rss" xmlUrl="https://github.com/ollama/ollama/releases.atom" htmlUrl="https://github.com/ollama/ollama/releases"/>
     </outline>
     <outline text="Science">
       <outline text="Quanta Magazine" type="rss" xmlUrl="https://api.quantamagazine.org/feed/" htmlUrl="https://www.quantamagazine.org/" description="Illuminating science"/>
