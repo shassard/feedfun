@@ -56,16 +56,13 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr 
 			published = time.Unix(0, 0)
 		}
 
-		// inherit the feed's Scheme and Host when it's not present in an item's link
-		itemURL, err := url.Parse(item.Link)
+		// generate reference url for the item URL based on the feed URL.
+		// this will ensure that the path is not relative, and something
+		// that we can feed to an llm with no other context.
+		itemURL, err := feedURL.Parse(item.Link)
 		if err == nil {
-			// check if we don't have a host or scheme.
-			// if we don't, then use the one from the feed.
-			if len(itemURL.Host) == 0 || len(itemURL.Scheme) == 0 {
-				itemURL.Scheme = feedURL.Scheme
-				itemURL.Host = feedURL.Host
-				slog.Warn("used a scheme and host from the parent feed", "feed", itemURL)
-			}
+			slog.Debug("replaced item url", "feed_link", feed.Link, "item_link", item.Link, "item_url", itemURL.String())
+			item.Link = itemURL.String()
 		}
 
 		article := f.Item{
