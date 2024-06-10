@@ -2,10 +2,13 @@ package feed
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"slices"
 	"time"
 
 	jsonIter "github.com/json-iterator/go"
@@ -76,9 +79,26 @@ func (i *Item) GetKey() []byte {
 }
 
 func (i *Item) GenerateSummary(model string) error {
+	if len(model) == 0 {
+		return errors.New("no llm model was specified")
+	}
+
+	if len(i.Link) == 0 {
+		return errors.New("the article contains no link to generate a summary from")
+	}
+
+	parsedURL, err := url.Parse(i.Link)
+	if err != nil {
+		return err
+	}
+
+	if !slices.Contains([]string{"http", "https"}, parsedURL.Scheme) {
+		return errors.New("article link does not contain a supported scheme")
+	}
+
 	json := jsonIter.ConfigFastest
 
-	slog.Info("generating summary for article", "link", i.Link)
+	slog.Debug("generating summary for article", "link", i.Link)
 
 	prompt := fmt.Sprintf("Generate a two sentence summary of %s", i.Link)
 
