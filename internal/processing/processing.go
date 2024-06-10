@@ -4,6 +4,7 @@ package processing
 import (
 	"fmt"
 	"log/slog"
+	"net/url"
 	"time"
 
 	f "github.com/shassard/feedfun/internal/feed"
@@ -16,6 +17,19 @@ import (
 
 // processFeed read a feed and emit items to itemChan.
 func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr chan<- error) {
+	feedURL, err := url.Parse(feed.Link)
+	if err != nil {
+		chErr <- fmt.Errorf("feed does not have a valid link: %+v", feed)
+		done <- true
+		return
+	}
+
+	if len(feedURL.Host) == 0 || len(feedURL.Scheme) == 0 {
+		chErr <- fmt.Errorf("feed does not have a valid host or scheme: %+v", feed)
+		done <- true
+		return
+	}
+
 	fp := gofeed.NewParser()
 	parsedFeed, err := fp.ParseURL(feed.Link)
 	if err != nil {
@@ -40,6 +54,18 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr 
 			// no publish time, then use something stable (and old!)
 			// so it doesn't keep popping up at the top of our feeds
 			published = time.Unix(0, 0)
+		}
+
+		// inherit the feed's Scheme and Host when it's not present in an item's link
+		itemURL, err := url.Parse(item.Link)
+		if err == nil {
+			// check if we don't have a host or scheme.
+			// if we don't, then use the one from the feed.
+			if len(itemURL.Host) == 0 || len(itemURL.Scheme) == 0 {
+				itemURL.Scheme = feedURL.Scheme
+				itemURL.Host = feedURL.Host
+				slog.Warn("used a scheme and host from the parent feed", "feed", itemURL)
+			}
 		}
 
 		article := f.Item{
