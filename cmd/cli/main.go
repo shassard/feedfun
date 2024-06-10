@@ -42,7 +42,7 @@ func oneShot(config *Config) int {
 	}()
 
 	if !config.noRefreshMode {
-		if err := processing.GetFeeds(db, config.opmlFilename, config.ollamaEnable); err != nil {
+		if err := processing.GetFeeds(db, config.opmlFilename, config.ollamaEnable, config.ollamaModel); err != nil {
 			slog.Error("failed to get feeds", "error", err)
 			return 1
 		}
