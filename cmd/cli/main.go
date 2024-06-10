@@ -8,29 +8,17 @@ import (
 	"os"
 	"time"
 
+	"github.com/shassard/feedfun/internal/config"
 	"github.com/shassard/feedfun/internal/output"
 	"github.com/shassard/feedfun/internal/processing"
 
 	"github.com/cockroachdb/pebble"
 )
 
-type Config struct {
-	daemonMode    bool
-	daemonPort    uint
-	dbDirname     string
-	maxAgeHours   uint
-	mode          int
-	noRefreshMode bool
-	ollamaEnable  bool
-	ollamaModel   string
-	opmlFilename  string
-	refreshTicker time.Duration
-}
-
-func oneShot(config *Config) int {
+func oneShot(cfg *config.Config) int {
 	slog.Info("running in one-shot mode")
 
-	db, err := pebble.Open(config.dbDirname, &pebble.Options{})
+	db, err := pebble.Open(cfg.DbDirname, &pebble.Options{})
 	if err != nil {
 		slog.Error("failed to open database", "error", err)
 		return 1
@@ -41,15 +29,15 @@ func oneShot(config *Config) int {
 		}
 	}()
 
-	if !config.noRefreshMode {
-		if err := processing.GetFeeds(db, config.opmlFilename, config.ollamaEnable, config.ollamaModel); err != nil {
+	if !cfg.NoRefreshMode {
+		if err := processing.GetFeeds(db, cfg.OpmlFilename, cfg.Ollama.Enable, cfg.Ollama.Model); err != nil {
 			slog.Error("failed to get feeds", "error", err)
 			return 1
 		}
 	}
 
-	maxAge := time.Duration(int64(config.maxAgeHours) * int64(time.Hour))
-	_, err = output.WriteItems(db, config.mode, maxAge)
+	maxAge := time.Duration(int64(cfg.MaxAgeHours) * int64(time.Hour))
+	_, err = output.WriteItems(db, cfg.OutputMode, maxAge)
 	if err != nil {
 		slog.Error("failed to output items", "error", err)
 		return 1
@@ -58,12 +46,12 @@ func oneShot(config *Config) int {
 	return 0
 }
 
-func httpDaemon(config *Config) int {
+func httpDaemon(cfg *config.Config) int {
 	slog.Info("running in daemon mode")
 
-	maxAge := time.Duration(int64(config.maxAgeHours) * int64(time.Hour))
+	maxAge := time.Duration(int64(cfg.MaxAgeHours) * int64(time.Hour))
 
-	db, err := pebble.Open(config.dbDirname, &pebble.Options{})
+	db, err := pebble.Open(cfg.DbDirname, &pebble.Options{})
 	if err != nil {
 		slog.Error("failed to open database", "error", err)
 		return 1
@@ -76,15 +64,15 @@ func httpDaemon(config *Config) int {
 
 	out := []byte("generating index page. please reload in a few moments ...")
 
-	slog.Info("created refresh ticker", "duration", config.refreshTicker)
-	ticker := time.NewTicker(config.refreshTicker)
+	slog.Info("created refresh ticker", "duration", cfg.RefreshTicker)
+	ticker := time.NewTicker(cfg.RefreshTicker)
 	go func() {
 		for ; true; <-ticker.C {
 			start := time.Now()
-			if err := processing.GetFeeds(db, config.opmlFilename, config.ollamaEnable, config.ollamaModel); err != nil {
+			if err := processing.GetFeeds(db, cfg.OpmlFilename, cfg.Ollama.Enable, cfg.Ollama.Model); err != nil {
 				slog.Error("failed to get feeds on tick", "error", err)
 			}
-			out, err = output.WriteItems(db, config.mode, maxAge)
+			out, err = output.WriteItems(db, cfg.OutputMode, maxAge)
 			if err != nil {
 				slog.Error("failed to output items", "error", err)
 			}
@@ -107,8 +95,8 @@ func httpDaemon(config *Config) int {
 			}
 		})
 
-	slog.Info("listening for http requests", "port", config.daemonPort)
-	slog.Error("failed to listen and serve http", "error", http.ListenAndServe(fmt.Sprintf(":%d", config.daemonPort), nil))
+	slog.Info("listening for http requests", "port", cfg.Daemon.Port)
+	slog.Error("failed to listen and serve http", "error", http.ListenAndServe(fmt.Sprintf(":%d", cfg.Daemon.Port), nil))
 
 	return 0
 }
@@ -116,23 +104,23 @@ func httpDaemon(config *Config) int {
 // main this is a test
 func main() {
 	var err error
-	var config Config
+	var cfg config.Config
 
-	flag.BoolVar(&config.noRefreshMode, "norefresh", false, "skip refreshing feeds on start")
+	flag.BoolVar(&cfg.NoRefreshMode, "norefresh", false, "skip refreshing feeds on start")
 	var outMode string // temporary varible to setup our mode enum
 	flag.StringVar(&outMode, "outmode", "html", "set output mode to \"markdown\" or \"html\"")
-	flag.StringVar(&config.opmlFilename, "opml", "feeds.opml", "opml filename")
-	flag.StringVar(&config.dbDirname, "db", "data.db", "pebble database directory name")
-	flag.UintVar(&config.maxAgeHours, "hours", 48, "output articles published within this many hours")
-	flag.BoolVar(&config.daemonMode, "daemon", false, "enable http listener daemon")
-	flag.UintVar(&config.daemonPort, "port", 8173, "port which the daemon will listen on")
+	flag.StringVar(&cfg.OpmlFilename, "opml", "feeds.opml", "opml filename")
+	flag.StringVar(&cfg.DbDirname, "db", "data.db", "pebble database directory name")
+	flag.UintVar(&cfg.MaxAgeHours, "hours", 48, "output articles published within this many hours")
+	flag.BoolVar(&cfg.Daemon.Mode, "daemon", false, "enable http listener daemon")
+	flag.UintVar(&cfg.Daemon.Port, "port", 8173, "port which the daemon will listen on")
 	var refreshTicker string
 	flag.StringVar(&refreshTicker, "refreshticker", "1h", "duration to wait before refreshing feeds")
-	flag.BoolVar(&config.ollamaEnable, "ollamaenable", false, "enable ollama integration for article summary generation")
-	flag.StringVar(&config.ollamaModel, "ollamamodel", "phi3:medium", "llm to use when submitting requests to ollama")
+	flag.BoolVar(&cfg.Ollama.Enable, "ollamaenable", false, "enable ollama integration for article summary generation")
+	flag.StringVar(&cfg.Ollama.Model, "ollamamodel", "phi3:medium", "llm to use when submitting requests to ollama")
 	flag.Parse()
 
-	config.refreshTicker, err = time.ParseDuration(refreshTicker)
+	cfg.RefreshTicker, err = time.ParseDuration(refreshTicker)
 	if err != nil {
 		slog.Error("failed to parse refreshticker duration", "error", err)
 		os.Exit(1)
@@ -140,16 +128,16 @@ func main() {
 
 	switch outMode {
 	case "html":
-		config.mode = output.HTMLOutputMode
+		cfg.OutputMode = output.HTMLOutputMode
 	case "markdown":
-		config.mode = output.MarkdownOutputMode
+		cfg.OutputMode = output.MarkdownOutputMode
 	default:
-		config.mode = output.UnknownOutputMode
+		cfg.OutputMode = output.UnknownOutputMode
 	}
 
-	if config.daemonMode {
-		os.Exit(httpDaemon(&config))
+	if cfg.Daemon.Mode {
+		os.Exit(httpDaemon(&cfg))
 	} else {
-		os.Exit(oneShot(&config))
+		os.Exit(oneShot(&cfg))
 	}
 }
