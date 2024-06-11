@@ -116,6 +116,7 @@ func main() {
 	flag.StringVar(&refreshTicker, "refreshticker", "1h", "duration to wait before refreshing feeds")
 	flag.BoolVar(&cfg.Ollama.Enable, "ollamaenable", false, "enable ollama integration for article summary generation")
 	flag.StringVar(&cfg.Ollama.Model, "ollamamodel", "phi3:medium", "llm to use when submitting requests to ollama")
+	flag.StringVar(&cfg.Ollama.URL, "ollamaurl", "http://localhost:11434/", "set the ollama api url")
 	flag.Parse()
 
 	cfg.OutputMaxAge, err = time.ParseDuration(publishCutoff)

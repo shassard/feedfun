@@ -15,6 +15,7 @@ type OllamaConfig struct {
 	Cutoff time.Duration
 	Enable bool
 	Model  string
+	URL    string
 }
 
 type Config struct {

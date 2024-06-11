@@ -12,6 +12,8 @@ import (
 	"slices"
 	"time"
 
+	c "github.com/shassard/feedfun/internal/config"
+
 	jsonIter "github.com/json-iterator/go"
 )
 
@@ -79,8 +81,12 @@ func (i *Item) GetKey() []byte {
 		KeySeparator)
 }
 
-func (i *Item) GenerateSummary(model string) error {
-	if len(model) == 0 {
+func (i *Item) GenerateSummary(cfg *c.Config) error {
+	if len(cfg.Ollama.URL) == 0 {
+		return errors.New("no ollama api url specified")
+	}
+
+	if len(cfg.Ollama.Model) == 0 {
 		return errors.New("no llm model was specified")
 	}
 
@@ -103,7 +109,7 @@ func (i *Item) GenerateSummary(model string) error {
 
 	prompt := fmt.Sprintf("Generate a two sentence summary of %s", i.Link)
 
-	oReq := OllamaRequest{Model: model, Stream: false, Prompt: prompt}
+	oReq := OllamaRequest{Model: cfg.Ollama.Model, Stream: false, Prompt: prompt}
 
 	postData, err := json.Marshal(&oReq)
 	if err != nil {
@@ -119,7 +125,17 @@ func (i *Item) GenerateSummary(model string) error {
 		},
 	}
 
-	resp, err := c.Post("http://localhost:11434/api/generate", "application/json", buf)
+	u, err := url.Parse(cfg.Ollama.URL)
+	if err != nil {
+		return err
+	}
+
+	apiURL, err := u.Parse("api/generate")
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Post(apiURL.String(), "application/json", buf)
 	if err != nil {
 		return err
 	}
