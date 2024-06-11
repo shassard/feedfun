@@ -17,16 +17,16 @@ import (
 )
 
 // processFeed read a feed and emit items to itemChan.
-func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr chan<- error) {
+func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool) {
 	feedURL, err := url.Parse(feed.Link)
 	if err != nil {
-		chErr <- fmt.Errorf("feed does not have a valid link: %+v", feed)
+		slog.Error("feed does not have a valid link", "feed", feed)
 		done <- true
 		return
 	}
 
 	if len(feedURL.Host) == 0 || len(feedURL.Scheme) == 0 {
-		chErr <- fmt.Errorf("feed does not have a valid host or scheme: %+v", feed)
+		slog.Error("feed does not have a valid host or scheme", "feed", feed)
 		done <- true
 		return
 	}
@@ -34,7 +34,7 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr 
 	fp := gofeed.NewParser()
 	parsedFeed, err := fp.ParseURL(feed.Link)
 	if err != nil {
-		chErr <- fmt.Errorf("error processing feed: %+v %v", feed, err)
+		slog.Error("error processing feed", "feed", feed, "error", err)
 		done <- true
 		return
 	}
@@ -97,11 +97,10 @@ func GetFeeds(db *pebble.DB, cfg *c.Config) error {
 
 	feedItemChan := make(chan *f.Item)
 	doneChan := make(chan bool, 1)
-	errChan := make(chan error, 1)
 
 	for _, feed := range feeds {
 		feedProcessesWaiting++
-		go processFeed(feed, feedItemChan, doneChan, errChan)
+		go processFeed(feed, feedItemChan, doneChan)
 	}
 
 	b := db.NewIndexedBatch()
@@ -115,31 +114,33 @@ GatherFeeds:
 			// put articles that aren't already in the store
 			if _, closer, err := b.Get(key); err == pebble.ErrNotFound {
 				if cfg.Ollama.Enable {
-					if err := article.GenerateSummary(cfg.Ollama.Model); err != nil {
-						errChan <- fmt.Errorf("error generating article summary %v: %w", article, err)
+					if article.Published.After(time.Now().Add(-cfg.OutputMaxAge)) {
+						slog.Info("getting summary", "link", article.Link)
+						if err := article.GenerateSummary(cfg.Ollama.Model); err != nil {
+							slog.Error("error generating article summary", "article", article, "error", err)
+						}
+					} else {
+						slog.Info("skipping summary generation for article older than cutoff", "link", article.Link, "published", article.Published)
 					}
 				}
 				data, err := json.Marshal(&article)
 				if err != nil {
-					errChan <- fmt.Errorf("error marshalling article %v: %w", article, err)
+					slog.Error("error marshalling article", "article", article, "error", err)
 					continue
 				}
 				if err := b.Set(key, data, nil); err != nil {
-					errChan <- fmt.Errorf("error putting data: %w", err)
+					slog.Error("error putting data", "error", err)
 					continue
 				}
 			} else if err != nil {
-				errChan <- fmt.Errorf("batch get error: %w", err)
+				slog.Error("batch get error", "error", err)
 				continue
 			} else {
 				if err := closer.Close(); err != nil {
-					errChan <- fmt.Errorf("closer error: %w", err)
+					slog.Error("closer error", "error", err)
 					continue
 				}
 			}
-
-		case err := <-errChan:
-			slog.Error("feed processing error", "error", err)
 
 		case <-doneChan:
 			feedProcessesWaiting--
