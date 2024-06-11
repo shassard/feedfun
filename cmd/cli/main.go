@@ -109,7 +109,7 @@ func main() {
 	flag.StringVar(&cfg.OpmlFilename, "opml", "feeds.opml", "opml filename")
 	flag.StringVar(&cfg.DbDirname, "db", "data.db", "pebble database directory name")
 	var publishCutoff string
-	flag.StringVar(&publishCutoff, "publishcutoff", "2d", "output articles published within this duration of time")
+	flag.StringVar(&publishCutoff, "publishcutoff", "48h", "output articles published within this duration of time")
 	flag.BoolVar(&cfg.Daemon.Mode, "daemon", false, "enable http listener daemon")
 	flag.UintVar(&cfg.Daemon.Port, "port", 8173, "port which the daemon will listen on")
 	var refreshTicker string
