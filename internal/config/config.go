@@ -7,6 +7,10 @@ type DaemonConfig struct {
 	Port uint
 }
 
+type DatabaseConfig struct {
+	PruneMaxAge time.Duration
+}
+
 type OllamaConfig struct {
 	Cutoff time.Duration
 	Enable bool
@@ -15,6 +19,7 @@ type OllamaConfig struct {
 
 type Config struct {
 	Daemon        DaemonConfig
+	Database      DatabaseConfig
 	Ollama        OllamaConfig
 	DbDirname     string
 	MaxAgeHours   uint

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 
+	c "github.com/shassard/feedfun/internal/config"
 	f "github.com/shassard/feedfun/internal/feed"
 	"github.com/shassard/feedfun/internal/opml"
 
@@ -80,16 +81,16 @@ func processFeed(feed *f.Feed, itemChan chan<- *f.Item, done chan<- bool, chErr 
 }
 
 // GetFeeds read OPML subscriptions and populate db with items.
-func GetFeeds(db *pebble.DB, opmlFilename string, generateSummaries bool, model string) error {
+func GetFeeds(db *pebble.DB, cfg *c.Config) error {
 	json := jsonIter.ConfigFastest
 
-	feeds, err := opml.GetFeedsFromOPML(opmlFilename)
+	feeds, err := opml.GetFeedsFromOPML(cfg.OpmlFilename)
 	if err != nil {
 		return fmt.Errorf("unable to parse opml file: %w", err)
 	}
 
 	if len(feeds) == 0 {
-		return fmt.Errorf("no feeds found in opml: %s", opmlFilename)
+		return fmt.Errorf("no feeds found in opml: %s", cfg.OpmlFilename)
 	}
 
 	var feedProcessesWaiting uint
@@ -113,8 +114,8 @@ GatherFeeds:
 
 			// put articles that aren't already in the store
 			if _, closer, err := b.Get(key); err == pebble.ErrNotFound {
-				if generateSummaries {
-					if err := article.GenerateSummary(model); err != nil {
+				if cfg.Ollama.Enable {
+					if err := article.GenerateSummary(cfg.Ollama.Model); err != nil {
 						errChan <- fmt.Errorf("error generating article summary %v: %w", article, err)
 					}
 				}
@@ -157,7 +158,7 @@ GatherFeeds:
 }
 
 // PruneDatabase will delete entries from the KV store which have been published before maxAge
-func PruneDatabase(db *pebble.DB, maxAge time.Duration) error {
+func PruneDatabase(db *pebble.DB, cfg *c.Config) error {
 	json := jsonIter.ConfigFastest
 
 	i, err := db.NewIter(nil)
@@ -180,7 +181,7 @@ func PruneDatabase(db *pebble.DB, maxAge time.Duration) error {
 			}
 
 			// apply the cutoff date and collect recent items
-			if item.Published.Before(time.Now().Add(-maxAge)) {
+			if item.Published.Before(time.Now().Add(-cfg.Database.PruneMaxAge)) {
 				if err := db.Delete(i.Key(), nil); err != nil {
 					slog.Warn("failed to delete key",
 						"key", i.Key(),

@@ -30,7 +30,7 @@ func oneShot(cfg *config.Config) int {
 	}()
 
 	if !cfg.NoRefreshMode {
-		if err := processing.GetFeeds(db, cfg.OpmlFilename, cfg.Ollama.Enable, cfg.Ollama.Model); err != nil {
+		if err := processing.GetFeeds(db, cfg); err != nil {
 			slog.Error("failed to get feeds", "error", err)
 			return 1
 		}
@@ -69,7 +69,7 @@ func httpDaemon(cfg *config.Config) int {
 	go func() {
 		for ; true; <-ticker.C {
 			start := time.Now()
-			if err := processing.GetFeeds(db, cfg.OpmlFilename, cfg.Ollama.Enable, cfg.Ollama.Model); err != nil {
+			if err := processing.GetFeeds(db, cfg); err != nil {
 				slog.Error("failed to get feeds on tick", "error", err)
 			}
 			out, err = output.WriteItems(db, cfg.OutputMode, maxAge)
