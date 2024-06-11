@@ -115,12 +115,11 @@ GatherFeeds:
 			if _, closer, err := b.Get(key); err == pebble.ErrNotFound {
 				if cfg.Ollama.Enable {
 					if article.Published.After(time.Now().Add(-cfg.OutputMaxAge)) {
-						slog.Info("getting summary", "link", article.Link)
 						if err := article.GenerateSummary(cfg.Ollama.Model); err != nil {
 							slog.Error("error generating article summary", "article", article, "error", err)
 						}
 					} else {
-						slog.Info("skipping summary generation for article older than cutoff", "link", article.Link, "published", article.Published)
+						slog.Debug("skipping summary generation for article older than cutoff", "link", article.Link, "published", article.Published)
 					}
 				}
 				data, err := json.Marshal(&article)
