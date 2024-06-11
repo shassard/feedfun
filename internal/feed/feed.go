@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"slices"
@@ -110,7 +111,15 @@ func (i *Item) GenerateSummary(model string) error {
 	}
 	buf := bytes.NewReader(postData)
 
-	resp, err := http.Post("http://localhost:11434/api/generate", "application/json", buf)
+	c := http.Client{
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout: 5 * time.Second,
+			}).Dial,
+		},
+	}
+
+	resp, err := c.Post("http://localhost:11434/api/generate", "application/json", buf)
 	if err != nil {
 		return err
 	}
