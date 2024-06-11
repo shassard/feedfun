@@ -20,11 +20,11 @@ type OllamaConfig struct {
 type Config struct {
 	Daemon        DaemonConfig
 	Database      DatabaseConfig
-	Ollama        OllamaConfig
 	DbDirname     string
-	MaxAgeHours   uint
 	NoRefreshMode bool
+	Ollama        OllamaConfig
 	OpmlFilename  string
+	OutputMaxAge  time.Duration
 	OutputMode    int
 	RefreshTicker time.Duration
 }

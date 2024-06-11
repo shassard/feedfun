@@ -36,8 +36,7 @@ func oneShot(cfg *config.Config) int {
 		}
 	}
 
-	maxAge := time.Duration(int64(cfg.MaxAgeHours) * int64(time.Hour))
-	_, err = output.WriteItems(db, cfg.OutputMode, maxAge)
+	_, err = output.WriteItems(db, cfg.OutputMode, cfg.OutputMaxAge)
 	if err != nil {
 		slog.Error("failed to output items", "error", err)
 		return 1
@@ -48,8 +47,6 @@ func oneShot(cfg *config.Config) int {
 
 func httpDaemon(cfg *config.Config) int {
 	slog.Info("running in daemon mode")
-
-	maxAge := time.Duration(int64(cfg.MaxAgeHours) * int64(time.Hour))
 
 	db, err := pebble.Open(cfg.DbDirname, &pebble.Options{})
 	if err != nil {
@@ -72,7 +69,7 @@ func httpDaemon(cfg *config.Config) int {
 			if err := processing.GetFeeds(db, cfg); err != nil {
 				slog.Error("failed to get feeds on tick", "error", err)
 			}
-			out, err = output.WriteItems(db, cfg.OutputMode, maxAge)
+			out, err = output.WriteItems(db, cfg.OutputMode, cfg.OutputMaxAge)
 			if err != nil {
 				slog.Error("failed to output items", "error", err)
 			}
@@ -111,7 +108,8 @@ func main() {
 	flag.StringVar(&outMode, "outmode", "html", "set output mode to \"markdown\" or \"html\"")
 	flag.StringVar(&cfg.OpmlFilename, "opml", "feeds.opml", "opml filename")
 	flag.StringVar(&cfg.DbDirname, "db", "data.db", "pebble database directory name")
-	flag.UintVar(&cfg.MaxAgeHours, "hours", 48, "output articles published within this many hours")
+	var publishCutoff string
+	flag.StringVar(&publishCutoff, "publishcutoff", "2d", "output articles published within this duration of time")
 	flag.BoolVar(&cfg.Daemon.Mode, "daemon", false, "enable http listener daemon")
 	flag.UintVar(&cfg.Daemon.Port, "port", 8173, "port which the daemon will listen on")
 	var refreshTicker string
@@ -119,6 +117,12 @@ func main() {
 	flag.BoolVar(&cfg.Ollama.Enable, "ollamaenable", false, "enable ollama integration for article summary generation")
 	flag.StringVar(&cfg.Ollama.Model, "ollamamodel", "phi3:medium", "llm to use when submitting requests to ollama")
 	flag.Parse()
+
+	cfg.OutputMaxAge, err = time.ParseDuration(publishCutoff)
+	if err != nil {
+		slog.Error("failed to parse publishcutoff duration", "error", err)
+		os.Exit(1)
+	}
 
 	cfg.RefreshTicker, err = time.ParseDuration(refreshTicker)
 	if err != nil {
