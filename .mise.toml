@@ -4,5 +4,5 @@ go = "1.22.4"
 [tasks.build]
 description = 'Build the static binary'
 run = "GOOS=linux CGO_ENABLED=0 go build -o feedfun cmd/cli/main.go"
-sources = ['go.*', '**/*.go']
+sources = ['go.*', '**/*.go', 'internal/output/style.css']
 outputs = ['feedfun']

@@ -61,7 +61,7 @@ func generateItemsHTML(items []*f.Item) ([]byte, error) {
 			data = append(data,
 				[]byte(
 					fmt.Sprintf(
-						"<p><small>%s</small></p>\n",
+						"<blockquote>%s</blockquote>\n",
 						item.Summary))...)
 		}
 
